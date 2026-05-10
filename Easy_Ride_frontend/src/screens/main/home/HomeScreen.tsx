@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { useTheme, spacing, radius, typography } from '../../theme';
+import { useTheme, spacing, radius, typography } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 
 const { width, height } = Dimensions.get('window');
 
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainStackParamList } from '../../../navigation/types';
+
 export const HomeScreen = () => {
   const { theme, isDark } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const [activeTab, setActiveTab] = useState<'Transport' | 'Delivery' | 'Rental'>('Transport');
 
   return (
@@ -41,10 +46,16 @@ export const HomeScreen = () => {
           <Ionicons name="menu" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <View style={styles.topRightControls}>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.colors.background, marginRight: spacing.sm }]}>
+          <TouchableOpacity 
+            style={[styles.iconButton, { backgroundColor: theme.colors.background, marginRight: spacing.sm }]}
+            onPress={() => navigation.navigate('Search' as any)}
+          >
             <Ionicons name="search" size={24} color={theme.colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.colors.background }]}>
+          <TouchableOpacity 
+            style={[styles.iconButton, { backgroundColor: theme.colors.background }]}
+            onPress={() => navigation.navigate('Notification' as any)}
+          >
             <Ionicons name="notifications" size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -74,7 +85,10 @@ export const HomeScreen = () => {
           ))}
         </View>
 
-        <TouchableOpacity style={[styles.searchBar, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+        <TouchableOpacity 
+          style={[styles.searchBar, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
+          onPress={() => navigation.navigate('Search' as any)}
+        >
           <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
           <Text style={[styles.searchText, { color: theme.colors.textSecondary }]}>
             Where would you go?

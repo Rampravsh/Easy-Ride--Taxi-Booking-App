@@ -3,6 +3,13 @@ export type RootStackParamList = {
   Main: undefined;
 };
 
+export type MainStackParamList = {
+  Tabs: undefined;
+  Search: undefined;
+  Notification: undefined;
+  SelectLocation: undefined;
+};
+
 export type AuthStackParamList = {
   Splash: undefined;
   Onboarding1: undefined;

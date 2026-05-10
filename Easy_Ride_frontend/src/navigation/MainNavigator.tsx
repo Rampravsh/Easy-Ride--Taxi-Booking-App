@@ -1,21 +1,26 @@
 import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme';
 
-// Placeholder screens
+// Screens
+import { HomeScreen } from '../screens/main/home/HomeScreen';
+import { SearchScreen } from '../screens/main/location/SearchScreen';
+import { NotificationScreen } from '../screens/main/notification/NotificationScreen';
+import { SelectLocationScreen } from '../screens/main/location/SelectLocationScreen';
+
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
 const Placeholder = ({ name }: { name: string }) => {
   const { theme } = useTheme();
   return <View style={{ flex: 1, backgroundColor: theme.colors.background }} />;
 };
 
-import { HomeScreen } from '../screens/main/HomeScreen';
-
-const Tab = createBottomTabNavigator();
-
-export const MainNavigator = () => {
-  const { theme, isDark } = useTheme();
+const TabNavigator = () => {
+  const { theme } = useTheme();
 
   return (
     <Tab.Navigator
@@ -76,6 +81,17 @@ export const MainNavigator = () => {
         }}
       />
     </Tab.Navigator>
+  );
+};
+
+export const MainNavigator = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Tabs" component={TabNavigator} />
+      <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="Notification" component={NotificationScreen} />
+      <Stack.Screen name="SelectLocation" component={SelectLocationScreen} />
+    </Stack.Navigator>
   );
 };
 
