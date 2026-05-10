@@ -22,9 +22,12 @@ const RECENT_PLACES: Place[] = [
   { id: '4', name: 'Shopping mall', address: '4140 Parker Rd. Allentown, New Mexico 31134', distance: '4.8km', type: 'recent' },
 ];
 
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainStackParamList } from '../../../navigation/types';
+
 export const SearchScreen = () => {
   const { theme, isDark } = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Place[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -33,16 +36,13 @@ export const SearchScreen = () => {
     setSearchQuery(text);
     if (text.length > 0) {
       setHasSearched(true);
-      // Simulate search results
-      if (text.toLowerCase() === 'shop') {
-        setResults([
-          { id: '1', name: 'Burger Shop', address: '2972 Westheimer Rd. Santa Ana, Illinois 85486', distance: '2.7km', type: 'result' },
-          { id: '2', name: 'Shopping mall', address: '4140 Parker Rd. Allentown, New Mexico 31134', distance: '4.0km', type: 'result' },
-          { id: '3', name: 'Coffee Shop', address: '1901 Thornridge Cir. Shiloh, Hawaii 81063', distance: '1.1km', type: 'result' },
-        ]);
-      } else {
-        setResults([]);
-      }
+      // Mock search results (Workaround: Always return results)
+      setResults([
+        { id: '1', name: 'Burger Shop', address: '2972 Westheimer Rd. Santa Ana, Illinois 85486', distance: '2.7km', type: 'result' },
+        { id: '2', name: 'Shopping mall', address: '4140 Parker Rd. Allentown, New Mexico 31134', distance: '4.0km', type: 'result' },
+        { id: '3', name: 'Coffee Shop', address: '1901 Thornridge Cir. Shiloh, Hawaii 81063', distance: '1.1km', type: 'result' },
+        { id: '4', name: 'Office', address: '4517 Washington Ave. Manchester, Kentucky 39495', distance: '3.2km', type: 'result' },
+      ]);
     } else {
       setHasSearched(false);
       setResults([]);
@@ -50,7 +50,10 @@ export const SearchScreen = () => {
   };
 
   const renderPlaceItem = ({ item }: { item: Place }) => (
-    <TouchableOpacity style={styles.placeItem}>
+    <TouchableOpacity 
+      style={styles.placeItem}
+      onPress={() => navigation.navigate('SelectLocation' as any)}
+    >
       <View style={[styles.iconContainer, { backgroundColor: theme.colors.card }]}>
         <Ionicons 
           name={item.type === 'recent' ? "time-outline" : "location-outline"} 

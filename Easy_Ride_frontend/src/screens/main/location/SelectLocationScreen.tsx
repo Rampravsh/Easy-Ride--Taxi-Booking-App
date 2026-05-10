@@ -102,7 +102,7 @@ export const SelectLocationScreen = () => {
 
         <AppButton 
           title="Confirm Location" 
-          onPress={() => navigation.goBack()} 
+          onPress={() => navigation.navigate('SelectTransport')} 
           style={styles.confirmButton}
         />
       </View>

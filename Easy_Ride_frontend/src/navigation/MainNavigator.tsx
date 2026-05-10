@@ -10,6 +10,12 @@ import { HomeScreen } from '../screens/main/home/HomeScreen';
 import { SearchScreen } from '../screens/main/location/SearchScreen';
 import { NotificationScreen } from '../screens/main/notification/NotificationScreen';
 import { SelectLocationScreen } from '../screens/main/location/SelectLocationScreen';
+import { SelectTransportScreen } from '../screens/main/transport/SelectTransportScreen';
+import { AvailableCarsScreen } from '../screens/main/transport/AvailableCarsScreen';
+import { CarDetailsScreen } from '../screens/main/transport/CarDetailsScreen';
+import { RequestRentScreen } from '../screens/main/transport/RequestRentScreen';
+import { PaymentMethodScreen } from '../screens/main/transport/PaymentMethodScreen';
+import { ThankYouScreen } from '../screens/main/transport/ThankYouScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -91,6 +97,12 @@ export const MainNavigator = () => {
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="Notification" component={NotificationScreen} />
       <Stack.Screen name="SelectLocation" component={SelectLocationScreen} />
+      <Stack.Screen name="SelectTransport" component={SelectTransportScreen} />
+      <Stack.Screen name="AvailableCars" component={AvailableCarsScreen} />
+      <Stack.Screen name="CarDetails" component={CarDetailsScreen} />
+      <Stack.Screen name="RequestRent" component={RequestRentScreen} />
+      <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
+      <Stack.Screen name="ThankYou" component={ThankYouScreen} />
     </Stack.Navigator>
   );
 };

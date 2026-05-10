@@ -8,6 +8,12 @@ export type MainStackParamList = {
   Search: undefined;
   Notification: undefined;
   SelectLocation: undefined;
+  SelectTransport: undefined;
+  AvailableCars: undefined;
+  CarDetails: { carId: string };
+  RequestRent: { carId: string };
+  PaymentMethod: undefined;
+  ThankYou: undefined;
 };
 
 export type AuthStackParamList = {
