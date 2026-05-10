@@ -16,6 +16,11 @@ import { CarDetailsScreen } from '../screens/main/transport/CarDetailsScreen';
 import { RequestRentScreen } from '../screens/main/transport/RequestRentScreen';
 import { PaymentMethodScreen } from '../screens/main/transport/PaymentMethodScreen';
 import { ThankYouScreen } from '../screens/main/transport/ThankYouScreen';
+import { RideTrackingScreen } from '../screens/main/transport/RideTrackingScreen';
+import { ChatScreen } from '../screens/main/chat/ChatScreen';
+import { CallingScreen } from '../screens/main/call/CallingScreen';
+import { TalkScreen } from '../screens/main/call/TalkScreen';
+import { FinalPaymentScreen } from '../screens/main/transport/FinalPaymentScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -103,6 +108,11 @@ export const MainNavigator = () => {
       <Stack.Screen name="RequestRent" component={RequestRentScreen} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="ThankYou" component={ThankYouScreen} />
+      <Stack.Screen name="RideTracking" component={RideTrackingScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="Calling" component={CallingScreen} />
+      <Stack.Screen name="Talk" component={TalkScreen} />
+      <Stack.Screen name="FinalPayment" component={FinalPaymentScreen} />
     </Stack.Navigator>
   );
 };

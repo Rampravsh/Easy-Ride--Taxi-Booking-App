@@ -99,7 +99,7 @@ export const RequestRentScreen = () => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <AppButton title="Confirm Booking" onPress={() => navigation.navigate('ThankYou')} />
+        <AppButton title="Confirm Booking" onPress={() => navigation.navigate('FinalPayment')} />
       </View>
     </SafeAreaView>
   );

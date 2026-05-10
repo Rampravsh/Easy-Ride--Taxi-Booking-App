@@ -14,6 +14,11 @@ export type MainStackParamList = {
   RequestRent: { carId: string };
   PaymentMethod: undefined;
   ThankYou: undefined;
+  RideTracking: undefined;
+  Chat: undefined;
+  Calling: undefined;
+  Talk: undefined;
+  FinalPayment: undefined;
 };
 
 export type AuthStackParamList = {
