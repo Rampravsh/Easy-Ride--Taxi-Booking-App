@@ -9,6 +9,7 @@ import { useTheme } from '../theme';
 import { HomeScreen } from '../screens/main/home/HomeScreen';
 import { SearchScreen } from '../screens/main/location/SearchScreen';
 import { NotificationScreen } from '../screens/main/notification/NotificationScreen';
+import { FavouriteScreen } from '../screens/main/favourite/FavouriteScreen';
 import { SelectLocationScreen } from '../screens/main/location/SelectLocationScreen';
 import { SelectTransportScreen } from '../screens/main/transport/SelectTransportScreen';
 import { AvailableCarsScreen } from '../screens/main/transport/AvailableCarsScreen';
@@ -60,7 +61,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen 
         name="Favourite" 
-        component={() => <Placeholder name="Favourite" />} 
+        component={FavouriteScreen} 
         options={{
           tabBarLabel: 'Favourite',
           tabBarIcon: ({ color }) => <Ionicons name="heart" size={24} color={color} />,
