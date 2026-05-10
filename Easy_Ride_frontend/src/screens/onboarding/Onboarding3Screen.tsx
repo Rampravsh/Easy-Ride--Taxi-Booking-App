@@ -12,8 +12,8 @@ export const Onboarding3Screen = () => {
       image={require('../../../assets/images/onboarding3.png')}
       title="Book your car"
       description="Safe, comfortable, and affordable rides at your doorstep."
-      onNext={() => navigation.navigate('EnableLocation')}
-      onSkip={() => navigation.navigate('EnableLocation')}
+      onNext={() => navigation.navigate('Main' as any)}
+      onSkip={() => navigation.navigate('Main' as any)}
       isLast={true}
     />
   );

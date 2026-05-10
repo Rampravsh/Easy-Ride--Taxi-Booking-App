@@ -1,3 +1,8 @@
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+};
+
 export type AuthStackParamList = {
   Splash: undefined;
   Onboarding1: undefined;
@@ -18,11 +23,6 @@ export type AuthStackParamList = {
   Congratulations: { 
     title: string; 
     message: string; 
-    nextScreen: string; 
+    nextScreen: keyof RootStackParamList | keyof AuthStackParamList; 
   };
-};
-
-export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
 };

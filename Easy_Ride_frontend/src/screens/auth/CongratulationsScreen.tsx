@@ -15,11 +15,13 @@ export const CongratulationsScreen = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // In a real app, you might use navigation.reset or navigate to Main
-      console.log(`Redirecting to ${nextScreen}`);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: nextScreen as any }],
+      });
     }, 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [navigation, nextScreen]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>

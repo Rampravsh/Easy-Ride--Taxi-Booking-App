@@ -13,7 +13,7 @@ export const Onboarding1Screen = () => {
       title="Anywhere you are"
       description="We provide best taxi booking service for you"
       onNext={() => navigation.navigate('Onboarding2')}
-      onSkip={() => navigation.replace('Welcome')}
+      onSkip={() => navigation.navigate('Main' as any)}
     />
   );
 };
