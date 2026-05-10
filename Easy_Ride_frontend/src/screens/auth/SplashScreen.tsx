@@ -29,7 +29,7 @@ export const SplashScreen = () => {
             />
           </View>
         </View>
-        <Text style={styles.title}>RideGo</Text>
+        <Text style={styles.title}>Easy Ride</Text>
       </View>
       <View style={styles.loaderContainer}>
         {/* Using a custom looking loader approximation from the screenshot */}
@@ -49,28 +49,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoWrapper: {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 15,
-    elevation: 10,
-  },
+  logoWrapper: {},
   logoContainer: {
-    width: 130,
-    height: 130,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 35,
+    width: 150,
+    height: 150,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.xl,
   },
   logo: {
-    width: 90,
-    height: 90,
+    width: 150,
+    height: 150,
   },
   title: {
     fontSize: 48,

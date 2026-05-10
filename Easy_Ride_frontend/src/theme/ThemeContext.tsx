@@ -17,6 +17,7 @@ interface ThemeContextType {
   theme: Theme;
   setMode: (mode: 'light' | 'dark' | 'system') => void;
   mode: 'light' | 'dark' | 'system';
+  isDark: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -37,7 +38,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, setMode, mode }}>
+    <ThemeContext.Provider value={{ theme, setMode, mode, isDark }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -11,9 +11,9 @@ export const Onboarding2Screen = () => {
     <OnboardingLayout
       image={require('../../../assets/images/onboarding2.png')}
       title="At anytime"
-      description="Sell houses easily with the help of Listenoryx and to make this line big I am writing more."
+      description="Book your ride instantly at any time of the day."
       onNext={() => navigation.navigate('Onboarding3')}
-      onSkip={() => navigation.replace('Login')}
+      onSkip={() => navigation.replace('Welcome')}
     />
   );
 };

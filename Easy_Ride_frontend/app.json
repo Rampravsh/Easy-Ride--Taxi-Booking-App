@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "RideGo",
-    "slug": "RideGo",
+    "name": "Easy Ride",
+    "slug": "Easy_Ride",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
