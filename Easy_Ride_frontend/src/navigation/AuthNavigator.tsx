@@ -4,9 +4,9 @@ import { AuthStackParamList } from './types';
 
 // Screens
 import { SplashScreen } from '../screens/auth/SplashScreen';
-import { Onboarding1Screen } from '../screens/auth/Onboarding1Screen';
-import { Onboarding2Screen } from '../screens/auth/Onboarding2Screen';
-import { Onboarding3Screen } from '../screens/auth/Onboarding3Screen';
+import { Onboarding1Screen } from '../screens/onboarding/Onboarding1Screen';
+import { Onboarding2Screen } from '../screens/onboarding/Onboarding2Screen';
+import { Onboarding3Screen } from '../screens/onboarding/Onboarding3Screen';
 import { EnableLocationScreen } from '../screens/auth/EnableLocationScreen';
 import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
 import { SignUpScreen } from '../screens/auth/SignUpScreen';
