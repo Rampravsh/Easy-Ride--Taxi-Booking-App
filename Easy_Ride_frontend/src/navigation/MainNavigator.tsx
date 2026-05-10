@@ -21,6 +21,9 @@ import { ChatScreen } from '../screens/main/chat/ChatScreen';
 import { CallingScreen } from '../screens/main/call/CallingScreen';
 import { TalkScreen } from '../screens/main/call/TalkScreen';
 import { FinalPaymentScreen } from '../screens/main/transport/FinalPaymentScreen';
+import { PaymentSuccessScreen } from '../screens/main/transport/PaymentSuccessScreen';
+import { ReviewScreen } from '../screens/main/transport/ReviewScreen';
+import { CancelRideScreen } from '../screens/main/transport/CancelRideScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -113,6 +116,9 @@ export const MainNavigator = () => {
       <Stack.Screen name="Calling" component={CallingScreen} />
       <Stack.Screen name="Talk" component={TalkScreen} />
       <Stack.Screen name="FinalPayment" component={FinalPaymentScreen} />
+      <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
+      <Stack.Screen name="Review" component={ReviewScreen} />
+      <Stack.Screen name="CancelRide" component={CancelRideScreen} />
     </Stack.Navigator>
   );
 };

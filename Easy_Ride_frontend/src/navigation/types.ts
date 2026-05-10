@@ -19,6 +19,9 @@ export type MainStackParamList = {
   Calling: undefined;
   Talk: undefined;
   FinalPayment: undefined;
+  PaymentSuccess: undefined;
+  Review: undefined;
+  CancelRide: undefined;
 };
 
 export type AuthStackParamList = {

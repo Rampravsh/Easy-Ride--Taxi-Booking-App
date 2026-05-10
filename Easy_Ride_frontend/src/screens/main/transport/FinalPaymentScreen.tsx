@@ -135,7 +135,7 @@ export const FinalPaymentScreen = () => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <AppButton title="Confirm Ride" onPress={() => navigation.navigate('RideTracking' as any)} />
+        <AppButton title="Confirm Ride" onPress={() => navigation.navigate('PaymentSuccess')} />
       </View>
     </SafeAreaView>
   );

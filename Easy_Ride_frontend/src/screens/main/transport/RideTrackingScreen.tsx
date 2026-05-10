@@ -155,7 +155,7 @@ export const RideTrackingScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.cancelButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('CancelRide')}
           >
             <Text style={styles.cancelButtonText}>Cancel Ride</Text>
           </TouchableOpacity>
