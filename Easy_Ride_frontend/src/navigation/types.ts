@@ -22,6 +22,12 @@ export type MainStackParamList = {
   PaymentSuccess: undefined;
   Review: undefined;
   CancelRide: undefined;
+  Wallet: undefined;
+  AddAmount: undefined;
+  AddCard: undefined;
+  AddSuccess: { amount: string };
+  Offer: undefined;
+  Profile: undefined;
 };
 
 export type AuthStackParamList = {

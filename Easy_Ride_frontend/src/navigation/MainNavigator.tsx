@@ -8,6 +8,12 @@ import { useTheme } from '../theme';
 // Screens
 import { HomeScreen } from '../screens/main/home/HomeScreen';
 import { SearchScreen } from '../screens/main/location/SearchScreen';
+import { WalletScreen } from '../screens/main/wallet/WalletScreen';
+import { AddAmountScreen } from '../screens/main/wallet/AddAmountScreen';
+import { AddCardScreen } from '../screens/main/wallet/AddCardScreen';
+import { AddSuccessScreen } from '../screens/main/wallet/AddSuccessScreen';
+import { OfferScreen } from '../screens/main/offer/OfferScreen';
+import { ProfileScreen } from '../screens/main/profile/ProfileScreen';
 import { NotificationScreen } from '../screens/main/notification/NotificationScreen';
 import { FavouriteScreen } from '../screens/main/favourite/FavouriteScreen';
 import { SelectLocationScreen } from '../screens/main/location/SelectLocationScreen';
@@ -69,7 +75,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen 
         name="Wallet" 
-        component={() => <Placeholder name="Wallet" />} 
+        component={WalletScreen} 
         options={{
           tabBarLabel: '',
           tabBarIcon: ({ focused }) => (
@@ -81,7 +87,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen 
         name="Offer" 
-        component={() => <Placeholder name="Offer" />} 
+        component={OfferScreen} 
         options={{
           tabBarLabel: 'Offer',
           tabBarIcon: ({ color }) => <Ionicons name="pricetag" size={24} color={color} />,
@@ -89,7 +95,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen 
         name="Profile" 
-        component={() => <Placeholder name="Profile" />} 
+        component={ProfileScreen} 
         options={{
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
@@ -120,6 +126,10 @@ export const MainNavigator = () => {
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
       <Stack.Screen name="Review" component={ReviewScreen} />
       <Stack.Screen name="CancelRide" component={CancelRideScreen} />
+      <Stack.Screen name="Wallet" component={WalletScreen} />
+      <Stack.Screen name="AddAmount" component={AddAmountScreen} />
+      <Stack.Screen name="AddCard" component={AddCardScreen} />
+      <Stack.Screen name="AddSuccess" component={AddSuccessScreen} />
     </Stack.Navigator>
   );
 };
