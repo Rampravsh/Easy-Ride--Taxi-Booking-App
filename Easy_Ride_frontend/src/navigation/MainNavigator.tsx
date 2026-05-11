@@ -23,6 +23,12 @@ import { ComplainScreen } from '../screens/main/complain/ComplainScreen';
 import { ReferralScreen } from '../screens/main/referral/ReferralScreen';
 import { AboutUsScreen } from '../screens/main/about/AboutUsScreen';
 import { AddressScreen } from '../screens/main/address/AddressScreen';
+import { SettingsScreen } from '../screens/main/settings/SettingsScreen';
+import { ChangePasswordScreen } from '../screens/main/settings/ChangePasswordScreen';
+import { ChangeLanguageScreen } from '../screens/main/settings/ChangeLanguageScreen';
+import { PrivacyPolicyScreen } from '../screens/main/settings/PrivacyPolicyScreen';
+import { ContactUsScreen } from '../screens/main/settings/ContactUsScreen';
+import { DeleteAccountScreen } from '../screens/main/settings/DeleteAccountScreen';
 import { SelectLocationScreen } from '../screens/main/location/SelectLocationScreen';
 import { SelectTransportScreen } from '../screens/main/transport/SelectTransportScreen';
 import { AvailableCarsScreen } from '../screens/main/transport/AvailableCarsScreen';
@@ -150,6 +156,12 @@ export const MainNavigator = () => {
       <Stack.Screen name="Referral" component={ReferralScreen} />
       <Stack.Screen name="AboutUs" component={AboutUsScreen} />
       <Stack.Screen name="Address" component={AddressScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <Stack.Screen name="ChangeLanguage" component={ChangeLanguageScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+      <Stack.Screen name="ContactUs" component={ContactUsScreen} />
+      <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
     </Stack.Navigator>
   );
 };

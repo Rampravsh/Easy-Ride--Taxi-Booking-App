@@ -34,6 +34,12 @@ export type MainStackParamList = {
   Referral: undefined;
   AboutUs: undefined;
   Address: undefined;
+  Settings: undefined;
+  ChangePassword: undefined;
+  ChangeLanguage: undefined;
+  PrivacyPolicy: undefined;
+  ContactUs: undefined;
+  DeleteAccount: undefined;
 };
 
 export type AuthStackParamList = {

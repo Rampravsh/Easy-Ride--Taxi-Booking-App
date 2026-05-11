@@ -16,7 +16,7 @@ const MENU_ITEMS = [
   { id: 'complain', title: 'Complain', icon: 'alert-circle-outline', screen: 'Complain' },
   { id: 'referral', title: 'Referral', icon: 'share-social-outline', screen: 'Referral' },
   { id: 'about_us', title: 'About Us', icon: 'information-circle-outline', screen: 'AboutUs' },
-  { id: 'settings', title: 'Settings', icon: 'settings-outline', screen: 'Tabs' },
+  { id: 'settings', title: 'Settings', icon: 'settings-outline', screen: 'Settings' },
   { id: 'help', title: 'Help and Support', icon: 'help-circle-outline', screen: 'Tabs' },
   { id: 'logout', title: 'Logout', icon: 'log-out-outline', screen: 'SignIn', isLogout: true },
 ];
