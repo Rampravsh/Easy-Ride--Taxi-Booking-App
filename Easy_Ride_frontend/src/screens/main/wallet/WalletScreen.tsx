@@ -42,7 +42,10 @@ export const WalletScreen = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.colors.primary + '33' }]}>
+        <TouchableOpacity 
+          style={[styles.iconButton, { backgroundColor: theme.colors.primary + '33' }]}
+          onPress={() => navigation.navigate('Menu')}
+        >
           <Ionicons name="menu" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Wallet</Text>

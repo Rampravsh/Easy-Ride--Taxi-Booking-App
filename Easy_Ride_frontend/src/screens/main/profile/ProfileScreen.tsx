@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainStackParamList } from '../../../navigation/types';
 import { useTheme, spacing, radius } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../components/AppButton';
 
 export const ProfileScreen = () => {
   const { theme } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const [email, setEmail] = useState('nate@email.com');
   const [phone, setPhone] = useState('91');
   const [address, setAddress] = useState('Address');
@@ -16,7 +20,10 @@ export const ProfileScreen = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={[styles.menuButton, { backgroundColor: theme.colors.primary + '33' }]}>
+        <TouchableOpacity 
+          style={[styles.menuButton, { backgroundColor: theme.colors.primary + '33' }]}
+          onPress={() => navigation.navigate('Menu')}
+        >
           <Ionicons name="menu" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Edit Profile</Text>

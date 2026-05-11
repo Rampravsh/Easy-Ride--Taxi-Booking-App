@@ -28,6 +28,8 @@ export type MainStackParamList = {
   AddSuccess: { amount: string };
   Offer: undefined;
   Profile: undefined;
+  Menu: undefined;
+  History: undefined;
 };
 
 export type AuthStackParamList = {

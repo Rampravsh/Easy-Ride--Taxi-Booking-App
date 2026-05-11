@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainStackParamList } from '../../../navigation/types';
 import { useTheme, spacing, radius } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../components/AppButton';
@@ -16,6 +19,7 @@ const OFFERS = [
 
 export const OfferScreen = () => {
   const { theme } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const [selectedOffer, setSelectedOffer] = useState<typeof OFFERS[0] | null>(null);
 
   const renderOffer = ({ item }: { item: typeof OFFERS[0] }) => (
@@ -37,7 +41,10 @@ export const OfferScreen = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={[styles.menuButton, { backgroundColor: theme.colors.primary + '33' }]}>
+        <TouchableOpacity 
+          style={[styles.menuButton, { backgroundColor: theme.colors.primary + '33' }]}
+          onPress={() => navigation.navigate('Menu')}
+        >
           <Ionicons name="menu" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Special Offer</Text>

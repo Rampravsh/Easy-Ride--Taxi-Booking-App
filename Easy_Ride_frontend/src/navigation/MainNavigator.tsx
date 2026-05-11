@@ -16,6 +16,7 @@ import { OfferScreen } from '../screens/main/offer/OfferScreen';
 import { ProfileScreen } from '../screens/main/profile/ProfileScreen';
 import { NotificationScreen } from '../screens/main/notification/NotificationScreen';
 import { FavouriteScreen } from '../screens/main/favourite/FavouriteScreen';
+import { MenuScreen } from '../screens/main/menu/MenuScreen';
 import { SelectLocationScreen } from '../screens/main/location/SelectLocationScreen';
 import { SelectTransportScreen } from '../screens/main/transport/SelectTransportScreen';
 import { AvailableCarsScreen } from '../screens/main/transport/AvailableCarsScreen';
@@ -130,6 +131,14 @@ export const MainNavigator = () => {
       <Stack.Screen name="AddAmount" component={AddAmountScreen} />
       <Stack.Screen name="AddCard" component={AddCardScreen} />
       <Stack.Screen name="AddSuccess" component={AddSuccessScreen} />
+      <Stack.Screen 
+        name="Menu" 
+        component={MenuScreen} 
+        options={{ 
+          animation: 'slide_from_left',
+          presentation: 'transparentModal'
+        }} 
+      />
     </Stack.Navigator>
   );
 };

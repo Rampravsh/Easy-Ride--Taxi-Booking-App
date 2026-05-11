@@ -42,7 +42,10 @@ export const HomeScreen = () => {
 
       {/* Top Controls */}
       <SafeAreaView style={styles.topControls}>
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.colors.background }]}>
+        <TouchableOpacity 
+          style={[styles.iconButton, { backgroundColor: theme.colors.background }]}
+          onPress={() => navigation.navigate('Menu')}
+        >
           <Ionicons name="menu" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <View style={styles.topRightControls}>
