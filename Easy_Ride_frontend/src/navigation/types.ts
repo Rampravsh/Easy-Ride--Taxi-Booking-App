@@ -30,6 +30,10 @@ export type MainStackParamList = {
   Profile: undefined;
   Menu: undefined;
   History: undefined;
+  Complain: undefined;
+  Referral: undefined;
+  AboutUs: undefined;
+  Address: undefined;
 };
 
 export type AuthStackParamList = {

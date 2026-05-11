@@ -11,11 +11,11 @@ const { width } = Dimensions.get('window');
 
 const MENU_ITEMS = [
   { id: 'edit_profile', title: 'Edit Profile', icon: 'person-outline', screen: 'Profile' },
-  { id: 'address', title: 'Address', icon: 'location-outline', screen: 'Favourite' },
-  { id: 'history', title: 'History', icon: 'time-outline', screen: 'Tabs' },
-  { id: 'complain', title: 'Complain', icon: 'alert-circle-outline', screen: 'Tabs' },
-  { id: 'referral', title: 'Referral', icon: 'share-social-outline', screen: 'Tabs' },
-  { id: 'about_us', title: 'About Us', icon: 'information-circle-outline', screen: 'Tabs' },
+  { id: 'address', title: 'Address', icon: 'location-outline', screen: 'Address' },
+  { id: 'history', title: 'History', icon: 'time-outline', screen: 'History' },
+  { id: 'complain', title: 'Complain', icon: 'alert-circle-outline', screen: 'Complain' },
+  { id: 'referral', title: 'Referral', icon: 'share-social-outline', screen: 'Referral' },
+  { id: 'about_us', title: 'About Us', icon: 'information-circle-outline', screen: 'AboutUs' },
   { id: 'settings', title: 'Settings', icon: 'settings-outline', screen: 'Tabs' },
   { id: 'help', title: 'Help and Support', icon: 'help-circle-outline', screen: 'Tabs' },
   { id: 'logout', title: 'Logout', icon: 'log-out-outline', screen: 'SignIn', isLogout: true },

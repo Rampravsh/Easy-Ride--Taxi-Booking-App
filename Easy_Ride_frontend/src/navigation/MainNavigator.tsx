@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// Navigation Screens Registration
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,11 @@ import { ProfileScreen } from '../screens/main/profile/ProfileScreen';
 import { NotificationScreen } from '../screens/main/notification/NotificationScreen';
 import { FavouriteScreen } from '../screens/main/favourite/FavouriteScreen';
 import { MenuScreen } from '../screens/main/menu/MenuScreen';
+import { HistoryScreen } from '../screens/main/History/HistoryScreen';
+import { ComplainScreen } from '../screens/main/complain/ComplainScreen';
+import { ReferralScreen } from '../screens/main/referral/ReferralScreen';
+import { AboutUsScreen } from '../screens/main/about/AboutUsScreen';
+import { AddressScreen } from '../screens/main/address/AddressScreen';
 import { SelectLocationScreen } from '../screens/main/location/SelectLocationScreen';
 import { SelectTransportScreen } from '../screens/main/transport/SelectTransportScreen';
 import { AvailableCarsScreen } from '../screens/main/transport/AvailableCarsScreen';
@@ -139,6 +145,11 @@ export const MainNavigator = () => {
           presentation: 'transparentModal'
         }} 
       />
+      <Stack.Screen name="History" component={HistoryScreen} />
+      <Stack.Screen name="Complain" component={ComplainScreen} />
+      <Stack.Screen name="Referral" component={ReferralScreen} />
+      <Stack.Screen name="AboutUs" component={AboutUsScreen} />
+      <Stack.Screen name="Address" component={AddressScreen} />
     </Stack.Navigator>
   );
 };
