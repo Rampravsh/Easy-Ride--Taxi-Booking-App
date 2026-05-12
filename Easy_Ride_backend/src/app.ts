@@ -1,10 +1,16 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import compression from 'compression';
 import cookieParser from 'cookie-parser';
+// @ts-ignore
+import xss from 'xss-clean';
+import limiter from './config/rateLimit';
+import { errorMiddleware } from './middlewares/error.middleware';
 import authRoutes from './modules/auth/auth.routes';
+import userRoutes from './modules/user/user.routes';
+import rideRoutes from './modules/ride/ride.routes';
+import { ApiResponse } from './shared/responses/apiResponse';
 
 const app: Application = express();
 
@@ -12,37 +18,32 @@ const app: Application = express();
 app.use(helmet());
 app.use(cors());
 app.use(morgan('dev'));
-app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
+// Data sanitization against XSS
+app.use(xss());
+
+// Rate limiting
+app.use('/api', limiter);
+
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/rides', rideRoutes);
 
 // Root Route
 app.get('/', (req: Request, res: Response) => {
-  res.status(200).json({
-    message: 'Welcome to Easy Ride API',
-    status: 'success'
-  });
+  ApiResponse.success(res, 'Welcome to Easy Ride API v1');
 });
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    status: 'fail',
-    message: `Can't find ${req.originalUrl} on this server!`
-  });
+  ApiResponse.error(res, `Can't find ${req.originalUrl} on this server!`, 404);
 });
 
 // Global Error Handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  const statusCode = err.statusCode || 500;
-  res.status(statusCode).json({
-    status: 'error',
-    message: err.message || 'Internal Server Error'
-  });
-});
+app.use(errorMiddleware);
 
 export default app;
