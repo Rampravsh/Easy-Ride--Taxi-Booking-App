@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { UserRole } from '../../shared/enums';
 
 export interface IUser extends Document {
@@ -38,10 +38,9 @@ const userSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-userSchema.pre<IUser>('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre<IUser>('save', async function () {
+  if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password!, 12);
-  next();
 });
 
 userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {

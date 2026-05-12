@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 // @ts-ignore
-import xss from 'xss-clean';
 import limiter from './config/rateLimit';
 import { errorMiddleware } from './middlewares/error.middleware';
 import authRoutes from './modules/auth/auth.routes';
@@ -23,7 +22,6 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
 // Data sanitization against XSS
-app.use(xss());
 
 // Rate limiting
 app.use('/api', limiter);

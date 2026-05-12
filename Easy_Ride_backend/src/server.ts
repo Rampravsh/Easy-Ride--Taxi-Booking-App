@@ -1,16 +1,24 @@
 import dotenv from 'dotenv';
-import connectDB from './config/database';
+import http from 'http';
+import connectDB from './config/db';
 import app from './app';
 import logger from './config/logger';
+import { initSocket } from './config/socket';
 
 // Load environment variables
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.io
+initSocket(server);
+
+// Connect to MongoDB and start server
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     logger.info(`Server is running on port ${PORT}`);
   });
 });
