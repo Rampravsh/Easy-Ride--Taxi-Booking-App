@@ -9,6 +9,7 @@ import authRoutes from './modules/auth/auth.routes';
 import userRoutes from './modules/user/user.routes';
 import rideRoutes from './modules/ride/ride.routes';
 import riderRoutes from './modules/rider/rider.routes';
+import vehicleRoutes from './modules/vehicle/vehicle.routes';
 import { ApiResponse } from './shared/utils/apiResponse';
 
 const app: Application = express();
@@ -30,6 +31,7 @@ app.use('/api', apiLimiter);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/riders', riderRoutes);
+app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/rides', rideRoutes);
 
 // Root Route
