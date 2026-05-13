@@ -20,6 +20,7 @@ export enum PaymentStatus {
   REFUNDED = 'refunded',
 }
 
+
 export enum VehicleType {
   BIKE = 'bike',
   CAR = 'car',

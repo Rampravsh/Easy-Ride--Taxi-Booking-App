@@ -1,22 +1,21 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
+import loggerMiddleware from './middlewares/logger.middleware';
 import cookieParser from 'cookie-parser';
-// @ts-ignore
-import limiter from './config/rateLimit';
+import { apiLimiter } from './middlewares/rateLimit.middleware';
 import { errorMiddleware } from './middlewares/error.middleware';
 import authRoutes from './modules/auth/auth.routes';
 import userRoutes from './modules/user/user.routes';
 import rideRoutes from './modules/ride/ride.routes';
-import { ApiResponse } from './shared/responses/apiResponse';
+import { ApiResponse } from './shared/utils/apiResponse';
 
 const app: Application = express();
 
 // Middlewares
 app.use(helmet());
 app.use(cors());
-app.use(morgan('dev'));
+app.use(loggerMiddleware);
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
@@ -24,7 +23,7 @@ app.use(cookieParser());
 // Data sanitization against XSS
 
 // Rate limiting
-app.use('/api', limiter);
+app.use('/api', apiLimiter);
 
 // Routes
 app.use('/api/v1/auth', authRoutes);

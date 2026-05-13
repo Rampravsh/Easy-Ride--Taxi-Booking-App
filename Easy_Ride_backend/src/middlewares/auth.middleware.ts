@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AppError } from './error.middleware';
+import { ApiError } from '../shared/errors/ApiError';
 import User from '../modules/user/user.model';
+import { restrictTo } from './role.middleware';
 
 export const protect = async (req: any, res: Response, next: NextFunction) => {
   try {
@@ -13,28 +14,22 @@ export const protect = async (req: any, res: Response, next: NextFunction) => {
     }
 
     if (!token) {
-      return next(new AppError('You are not logged in! Please log in to get access.', 401));
+      return next(new ApiError('You are not logged in! Please log in to get access.', 401));
     }
 
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
 
     const currentUser = await User.findById(decoded.id);
     if (!currentUser) {
-      return next(new AppError('The user belonging to this token no longer exists.', 401));
+      return next(new ApiError('The user belonging to this token no longer exists.', 401));
     }
 
     req.user = currentUser;
     next();
   } catch (error) {
-    next(new AppError('Invalid token. Please log in again!', 401));
+    next(new ApiError('Invalid token. Please log in again!', 401));
   }
 };
 
-export const restrictTo = (...roles: string[]) => {
-  return (req: any, res: Response, next: NextFunction) => {
-    if (!roles.includes(req.user.role)) {
-      return next(new AppError('You do not have permission to perform this action', 403));
-    }
-    next();
-  };
-};
+export { restrictTo };
+

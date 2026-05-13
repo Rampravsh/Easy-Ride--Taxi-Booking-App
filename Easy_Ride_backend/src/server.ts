@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import http from 'http';
 import connectDB from './config/db';
 import app from './app';
-import logger from './config/logger';
+import logger from './shared/utils/logger';
 import { initSocket } from './config/socket';
 
 // Load environment variables

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { RideService } from './ride.service';
-import { ApiResponse } from '../../shared/responses/apiResponse';
+import { ApiResponse } from '../../shared/utils/apiResponse';
 
 const rideService = new RideService();
 

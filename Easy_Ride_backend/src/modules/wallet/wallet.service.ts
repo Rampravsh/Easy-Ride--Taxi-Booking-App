@@ -1,6 +1,6 @@
 import Wallet from './wallet.model';
 import WalletTransaction, { TransactionType } from './walletTransaction.model';
-import { AppError } from '../../middlewares/error.middleware';
+import { ApiError } from '../../shared/errors/ApiError';
 import mongoose from 'mongoose';
 
 export class WalletService {
@@ -32,7 +32,7 @@ export class WalletService {
     const wallet = await this.getWallet(userId);
 
     if (wallet.balance < amount) {
-      throw new AppError('Insufficient wallet balance', 400);
+      throw new ApiError('Insufficient wallet balance', 400);
     }
 
     wallet.balance -= amount;

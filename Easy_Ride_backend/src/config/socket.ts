@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
-import logger from './logger';
+import logger from '../shared/utils/logger';
 
 let io: Server;
 

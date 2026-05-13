@@ -1,7 +1,7 @@
 import Ride, { IRide } from './ride.model';
 import { RiderService } from '../rider/rider.service';
 import { RideStatus } from '../../shared/enums';
-import { AppError } from '../../middlewares/error.middleware';
+import { ApiError } from '../../shared/errors/ApiError';
 
 export class RideService {
   private riderService: RiderService;
@@ -32,9 +32,9 @@ export class RideService {
 
   async acceptRide(rideId: string, riderId: string) {
     const ride = await Ride.findById(rideId);
-    if (!ride) throw new AppError('Ride not found', 404);
+    if (!ride) throw new ApiError('Ride not found', 404);
     if (ride.status !== RideStatus.PENDING) {
-      throw new AppError('Ride is no longer available', 400);
+      throw new ApiError('Ride is no longer available', 400);
     }
 
     ride.rider = riderId as any;
@@ -46,8 +46,8 @@ export class RideService {
 
   async startRide(rideId: string, otp: string) {
     const ride = await Ride.findById(rideId);
-    if (!ride) throw new AppError('Ride not found', 404);
-    if (ride.otp !== otp) throw new AppError('Invalid OTP', 400);
+    if (!ride) throw new ApiError('Ride not found', 404);
+    if (ride.otp !== otp) throw new ApiError('Invalid OTP', 400);
 
     ride.status = RideStatus.STARTED;
     ride.startedAt = new Date();
@@ -58,7 +58,7 @@ export class RideService {
 
   async completeRide(rideId: string) {
     const ride = await Ride.findById(rideId);
-    if (!ride) throw new AppError('Ride not found', 404);
+    if (!ride) throw new ApiError('Ride not found', 404);
 
     ride.status = RideStatus.COMPLETED;
     ride.completedAt = new Date();

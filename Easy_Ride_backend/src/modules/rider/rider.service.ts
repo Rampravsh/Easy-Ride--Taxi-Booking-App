@@ -1,15 +1,15 @@
 import Rider, { IRider } from './rider.model';
 import User from '../user/user.model';
 import { UserRole } from '../../shared/enums';
-import { AppError } from '../../middlewares/error.middleware';
+import { ApiError } from '../../shared/errors/ApiError';
 
 export class RiderService {
   async registerRider(userId: string, riderData: Partial<IRider>) {
     const user = await User.findById(userId);
-    if (!user) throw new AppError('User not found', 404);
+    if (!user) throw new ApiError('User not found', 404);
 
     const existingRider = await Rider.findOne({ user: userId });
-    if (existingRider) throw new AppError('Already registered as a rider', 400);
+    if (existingRider) throw new ApiError('Already registered as a rider', 400);
 
     const rider = await Rider.create({
       ...riderData,

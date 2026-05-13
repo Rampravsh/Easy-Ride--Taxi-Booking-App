@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { ApiResponse } from '../shared/responses/apiResponse';
-import logger from '../config/logger';
+import { ApiResponse } from '../shared/utils/apiResponse';
+import { ApiError } from '../shared/errors/ApiError';
+import logger from '../shared/utils/logger';
 
 export const errorMiddleware = (
   err: any,
@@ -22,18 +23,5 @@ export const errorMiddleware = (
     });
   }
 
-  return ApiResponse.error(res, message, statusCode);
+  return ApiResponse.error(res, message, statusCode, err.isOperational ? null : err);
 };
-
-export class AppError extends Error {
-  statusCode: number;
-  isOperational: boolean;
-
-  constructor(message: string, statusCode: number) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true;
-
-    Error.captureStackTrace(this, this.constructor);
-  }
-}

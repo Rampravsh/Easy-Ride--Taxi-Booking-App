@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { ApiResponse } from '../shared/responses/apiResponse';
+import { ApiResponse } from '../shared/utils/apiResponse';
 
 /**
  * Middleware to validate request data using Zod schema

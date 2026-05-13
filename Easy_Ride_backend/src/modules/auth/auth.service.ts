@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { UserRepository } from '../user/user.repository';
-import { AppError } from '../../middlewares/error.middleware';
+import { ApiError } from '../../shared/errors/ApiError';
 import { IUser } from '../user/user.model';
 
 export class AuthService {
@@ -19,7 +19,7 @@ export class AuthService {
   async register(userData: any) {
     const existingUser = await this.userRepository.findByPhone(userData.phone);
     if (existingUser) {
-      throw new AppError('Phone number already registered', 400);
+      throw new ApiError('Phone number already registered', 400);
     }
 
     const user = await this.userRepository.create(userData);
@@ -32,7 +32,7 @@ export class AuthService {
     const user = await this.userRepository.findByPhone(phone);
 
     if (!user || (password && !(await user.comparePassword(password)))) {
-      throw new AppError('Invalid phone number or password', 401);
+      throw new ApiError('Invalid phone number or password', 401);
     }
 
     const token = this.signToken(user._id as string);

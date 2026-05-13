@@ -1,0 +1,3 @@
+export const MAX_RIDE_RADIUS = 5000;
+export const DRIVER_SEARCH_TIMEOUT = 30000;
+export const DEFAULT_SURGE_MULTIPLIER = 1;
