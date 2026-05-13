@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { ApiResponse } from '../shared/utils/apiResponse';
+import { ApiError } from '../shared/errors/ApiError';
 
 /**
  * Middleware to validate request data using Zod schema
@@ -22,7 +22,7 @@ export const validate = (schema: any) =>
           message: err.message,
         }));
 
-        return ApiResponse.error(res, 'Validation failed', 400, errors);
+        return next(new ApiError('Validation failed', 400, errors));
       }
       return next(error);
     }

@@ -1,12 +1,15 @@
 import { Router } from 'express';
-import * as authController from './auth.controller';
+import { authenticateWithFirebase } from './auth.controller';
 import { validate } from '../../middlewares/validation.middleware';
-import { loginSchema, registerSchema } from './auth.validation';
-import { authLimiter } from '../../middlewares/rateLimit.middleware';
+import { firebaseAuthSchema } from './auth.validation';
 
 const router = Router();
 
-router.post('/register', authLimiter, validate(registerSchema), authController.register);
-router.post('/login', authLimiter, validate(loginSchema), authController.login);
+/**
+ * @route   POST /api/v1/auth/firebase
+ * @desc    Authenticate user with Firebase token
+ * @access  Public
+ */
+router.post('/firebase', validate(firebaseAuthSchema), authenticateWithFirebase);
 
 export default router;

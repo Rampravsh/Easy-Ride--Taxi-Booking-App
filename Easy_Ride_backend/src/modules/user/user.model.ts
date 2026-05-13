@@ -3,9 +3,10 @@ import bcrypt from 'bcrypt';
 import { UserRole } from '../../shared/enums';
 
 export interface IUser extends Document {
+  firebaseUID: string;
   name: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   password?: string;
   role: UserRole;
   avatar?: string;
@@ -19,9 +20,10 @@ export interface IUser extends Document {
 
 const userSchema: Schema = new Schema(
   {
+    firebaseUID: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     email: { type: String, unique: true, sparse: true },
-    phone: { type: String, required: true, unique: true },
+    phone: { type: String, unique: true, sparse: true },
     password: { type: String, select: false },
     role: {
       type: String,

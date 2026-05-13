@@ -1,7 +1,10 @@
-import jwt from 'jsonwebtoken';
+import { firebaseAuth } from '../../config/firebase';
 import { UserRepository } from '../user/user.repository';
 import { ApiError } from '../../shared/errors/ApiError';
+import { UserRole } from '../../shared/enums';
 import { IUser } from '../user/user.model';
+import mongoose from 'mongoose';
+import Rider from '../rider/rider.model';
 
 export class AuthService {
   private userRepository: UserRepository;
@@ -10,32 +13,55 @@ export class AuthService {
     this.userRepository = new UserRepository();
   }
 
-  private signToken(id: string): string {
-    return jwt.sign({ id }, process.env.JWT_SECRET!, {
-      expiresIn: process.env.JWT_EXPIRES_IN,
-    });
-  }
+  /**
+   * Verify Firebase Token and get or create user
+   */
+  async verifyFirebaseToken(token: string, requestedRole: UserRole) {
+    try {
+      // 1. Verify token with Firebase Admin
+      const decodedToken = await firebaseAuth.verifyIdToken(token);
+      const { uid, email, phone_number, name, picture } = decodedToken;
 
-  async register(userData: any) {
-    const existingUser = await this.userRepository.findByPhone(userData.phone);
-    if (existingUser) {
-      throw new ApiError('Phone number already registered', 400);
+      // 2. Find user in database
+      let user = await this.userRepository.findByFirebaseUID(uid);
+
+      if (!user) {
+        // 3. Create user if not exists
+        user = await this.userRepository.create({
+          firebaseUID: uid,
+          name: name || 'User',
+          email: email,
+          phone: phone_number,
+          role: requestedRole,
+          avatar: picture,
+          isVerified: true, // Firebase users are typically verified
+        });
+
+        // 4. If role is Rider, create a Rider profile
+        if (requestedRole === UserRole.RIDER) {
+          await Rider.create({
+            user: user._id,
+            licenseNumber: 'PENDING', // To be updated by rider later
+          });
+        }
+      }
+
+      return {
+        _id: user._id,
+        firebaseUID: user.firebaseUID,
+        role: user.role,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      };
+    } catch (error: any) {
+      if (error.code === 'auth/id-token-expired') {
+        throw new ApiError('Firebase token has expired', 401);
+      }
+      if (error.code === 'auth/argument-error') {
+        throw new ApiError('Invalid Firebase token', 401);
+      }
+      throw new ApiError(error.message || 'Authentication failed', 401);
     }
-
-    const user = await this.userRepository.create(userData);
-    const token = this.signToken(user._id as string);
-
-    return { user, token };
-  }
-
-  async login(phone: string, password?: string) {
-    const user = await this.userRepository.findByPhone(phone);
-
-    if (!user || (password && !(await user.comparePassword(password)))) {
-      throw new ApiError('Invalid phone number or password', 401);
-    }
-
-    const token = this.signToken(user._id as string);
-    return { user, token };
   }
 }

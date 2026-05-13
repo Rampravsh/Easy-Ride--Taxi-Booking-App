@@ -1,0 +1,73 @@
+openapi: 3.0.0
+info:
+  title: Easy Ride API
+  version: 1.0.0
+  description: API Documentation for Easy Ride Taxi Booking Backend
+servers:
+  - url: http://localhost:3845/api/v1
+    description: Local development server
+paths:
+  /auth/firebase:
+    post:
+      summary: Authenticate with Firebase
+      description: Verifies a Firebase ID token and returns the user profile. Creates user if not exists.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - role
+              properties:
+                token:
+                  type: string
+                  description: Firebase ID token obtained from frontend
+                role:
+                  type: string
+                  enum: [user, rider, admin]
+                  description: Requested user role
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired token
+        '400':
+          description: Validation failed
+
+components:
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            _id:
+              type: string
+            firebaseUID:
+              type: string
+            role:
+              type: string
+            name:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

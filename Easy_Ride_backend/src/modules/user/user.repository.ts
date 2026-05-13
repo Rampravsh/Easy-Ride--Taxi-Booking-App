@@ -13,6 +13,10 @@ export class UserRepository {
     return await User.findOne({ phone }).select('+password');
   }
 
+  async findByFirebaseUID(firebaseUID: string): Promise<IUser | null> {
+    return await User.findOne({ firebaseUID });
+  }
+
   async findById(id: string): Promise<IUser | null> {
     return await User.findById(id);
   }

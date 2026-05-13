@@ -18,10 +18,10 @@ export const errorMiddleware = (
     return res.status(statusCode).json({
       success: false,
       message,
+      errors: err.errors || [],
       stack: err.stack,
-      error: err,
     });
   }
 
-  return ApiResponse.error(res, message, statusCode, err.isOperational ? null : err);
+  return ApiResponse.error(res, message, statusCode, err.errors || null);
 };
