@@ -34,6 +34,7 @@ app.use('/api/v1/riders', riderRoutes);
 app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/rides', rideRoutes);
 
+
 // Root Route
 app.get('/', (req: Request, res: Response) => {
   ApiResponse.success(res, 'Welcome to Easy Ride API v1');

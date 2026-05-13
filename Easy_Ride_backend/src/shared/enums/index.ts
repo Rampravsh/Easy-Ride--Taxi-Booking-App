@@ -5,9 +5,9 @@ export enum UserRole {
 }
 
 export enum RideStatus {
-  PENDING = 'pending',
+  SEARCHING = 'searching',
   ACCEPTED = 'accepted',
-  ARRIVED = 'arrived',
+  ARRIVING = 'arriving',
   STARTED = 'started',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
@@ -15,9 +15,15 @@ export enum RideStatus {
 
 export enum PaymentStatus {
   PENDING = 'pending',
-  COMPLETED = 'completed',
+  PAID = 'paid',
   FAILED = 'failed',
   REFUNDED = 'refunded',
+}
+
+export enum PaymentMethod {
+  CASH = 'cash',
+  WALLET = 'wallet',
+  ONLINE = 'online',
 }
 
 

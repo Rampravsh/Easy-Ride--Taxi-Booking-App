@@ -1,68 +1,92 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { RideStatus, PaymentStatus } from '../../shared/enums';
+import mongoose, { Schema } from 'mongoose';
+import { IRide } from './ride.interface';
+import { RideStatus, PaymentStatus, PaymentMethod, VehicleType } from '../../shared/enums';
+import { VehicleCategory } from '../vehicle/vehicle.interface';
 
-export interface IRide extends Document {
-  user: mongoose.Types.ObjectId;
-  rider?: mongoose.Types.ObjectId;
-  pickupLocation: {
-    address: string;
-    coordinates: number[];
-  };
-  destinationLocation: {
-    address: string;
-    coordinates: number[];
-  };
-  distance: number;
-  duration: number;
-  fare: number;
-  status: RideStatus;
-  paymentStatus: PaymentStatus;
-  paymentMethod: string;
-  otp: string;
-  startedAt?: Date;
-  completedAt?: Date;
-  cancelledBy?: string;
-  cancelReason?: string;
-}
+const locationSchema = new Schema({
+  type: {
+    type: String,
+    enum: ['Point'],
+    required: true,
+  },
+  coordinates: {
+    type: [Number], // [longitude, latitude]
+    required: true,
+  },
+  address: { type: String, required: true },
+});
 
 const rideSchema: Schema = new Schema(
   {
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    rider: { type: Schema.Types.ObjectId, ref: 'Rider' },
-    pickupLocation: {
-      address: { type: String, required: true },
-      type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], required: true },
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    rider: { type: Schema.Types.ObjectId, ref: 'Rider', index: true },
+    vehicle: { type: Schema.Types.ObjectId, ref: 'Vehicle' },
+    rideType: {
+      type: String,
+      enum: Object.values(VehicleType),
+      required: true,
     },
-    destinationLocation: {
-      address: { type: String, required: true },
-      type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], required: true },
+    rideCategory: {
+      type: String,
+      enum: Object.values(VehicleCategory),
+      required: true,
     },
-    distance: { type: Number, required: true },
-    duration: { type: Number, required: true },
-    fare: { type: Number, required: true },
     status: {
       type: String,
       enum: Object.values(RideStatus),
-      default: RideStatus.PENDING,
+      default: RideStatus.SEARCHING,
+      index: true,
+    },
+    pickupLocation: {
+      type: locationSchema,
+      required: true,
+    },
+    dropLocation: {
+      type: locationSchema,
+      required: true,
+    },
+    routePath: { type: String },
+    estimatedDistance: { type: Number, required: true },
+    estimatedDuration: { type: Number, required: true },
+    actualDistance: { type: Number },
+    actualDuration: { type: Number },
+    baseFare: { type: Number, required: true },
+    surgeMultiplier: { type: Number, default: 1.0 },
+    taxAmount: { type: Number, required: true },
+    totalFare: { type: Number, required: true },
+    paymentMethod: {
+      type: String,
+      enum: Object.values(PaymentMethod),
+      default: PaymentMethod.CASH,
     },
     paymentStatus: {
       type: String,
       enum: Object.values(PaymentStatus),
       default: PaymentStatus.PENDING,
     },
-    paymentMethod: { type: String, default: 'cash' },
-    otp: { type: String },
+    otp: { type: String, required: true },
     startedAt: { type: Date },
     completedAt: { type: Date },
-    cancelledBy: { type: String },
-    cancelReason: { type: String },
+    cancelledAt: { type: Date },
+    cancelledBy: { type: Schema.Types.ObjectId, refPath: 'cancelledByModel' },
+    cancelledByModel: { type: String, enum: ['User', 'Rider', 'Admin'] },
+    cancellationReason: { type: String },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
+// Mandatory Geospatial Indexes
 rideSchema.index({ pickupLocation: '2dsphere' });
-rideSchema.index({ destinationLocation: '2dsphere' });
+rideSchema.index({ dropLocation: '2dsphere' });
 
-export default mongoose.model<IRide>('Ride', rideSchema);
+// Compound indexes for history queries
+rideSchema.index({ user: 1, createdAt: -1 });
+rideSchema.index({ rider: 1, createdAt: -1 });
+
+const Ride = mongoose.model<IRide>('Ride', rideSchema);
+
+export default Ride;
