@@ -1,16 +1,15 @@
 import { Router } from 'express';
-import { AdminController } from './admin.controller';
+import { AnalyticsController } from './analytics.controller';
 import { protect } from '../../middlewares/auth.middleware';
 import { authorizeRoles } from '../../middlewares/rbac.middleware';
 import { UserRole } from '../../shared/enums';
 
 const router = Router();
 
-// Protect all admin routes and ensure user has ADMIN role
 router.use(protect);
 router.use(authorizeRoles(UserRole.ADMIN));
 
-router.get('/dashboard', AdminController.getDashboardStats);
-router.put('/riders/:id/verify', AdminController.verifyRider);
+router.get('/overview', AnalyticsController.getOverview);
+router.get('/revenue', AnalyticsController.getRevenue);
 
 export default router;

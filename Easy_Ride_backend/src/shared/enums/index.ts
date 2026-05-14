@@ -148,3 +148,33 @@ export enum PoolStatus {
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
+
+export enum AdminRole {
+  SUPER_ADMIN = 'super_admin',
+  OPERATIONS_ADMIN = 'operations_admin',
+  SUPPORT_ADMIN = 'support_admin',
+  FINANCE_ADMIN = 'finance_admin',
+  ANALYTICS_ADMIN = 'analytics_admin',
+}
+
+export enum FraudType {
+  PROMO_ABUSE = 'promo_abuse',
+  GPS_SPOOF = 'gps_spoof',
+  WALLET_FRAUD = 'wallet_fraud',
+  MULTI_ACCOUNT = 'multi_account',
+  FAKE_RIDE = 'fake_ride',
+}
+
+export enum AuditAction {
+  USER_UPDATE = 'user_update',
+  RIDER_VERIFY = 'rider_verify',
+  PAYMENT_REFUND = 'payment_refund',
+  PROMO_CREATE = 'promo_create',
+  SURGE_OVERRIDE = 'surge_override',
+  ADMIN_LOGIN = 'admin_login',
+}
+
+export enum AuditStatus {
+  SUCCESS = 'success',
+  FAILURE = 'failure',
+}

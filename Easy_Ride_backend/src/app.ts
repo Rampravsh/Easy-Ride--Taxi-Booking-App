@@ -19,7 +19,12 @@ import callRoutes from './modules/call/call.routes';
 import promoRoutes from './modules/promo/promo.routes';
 import scheduleRoutes from './modules/schedule/schedule.routes';
 import poolRoutes from './modules/pool/pool.routes';
+import adminRoutes from './modules/admin/admin.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
+import monitoringRoutes from './modules/monitoring/monitoring.routes';
+import { correlationMiddleware } from './modules/observability/correlation.middleware';
 import { ApiResponse } from './shared/utils/apiResponse';
+
 
 
 
@@ -27,7 +32,9 @@ import { ApiResponse } from './shared/utils/apiResponse';
 const app: Application = express();
 
 // Middlewares
+app.use(correlationMiddleware);
 app.use(helmet());
+
 app.use(cors());
 app.use(loggerMiddleware);
 app.use(express.json({ limit: '10kb' }));
@@ -54,6 +61,10 @@ app.use('/api/v1/calls', callRoutes);
 app.use('/api/v1/promos', promoRoutes);
 app.use('/api/v1/schedules', scheduleRoutes);
 app.use('/api/v1/pool', poolRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/monitoring', monitoringRoutes);
+
 
 
 
