@@ -5,6 +5,11 @@ import app from './app';
 import logger from './shared/utils/logger';
 import { initSocket } from './config/socket';
 
+// Start Background Workers
+import './modules/notification/jobs/notification.worker';
+import './modules/schedule/queues/scheduledRide.worker';
+
+
 // Load environment variables
 dotenv.config();
 

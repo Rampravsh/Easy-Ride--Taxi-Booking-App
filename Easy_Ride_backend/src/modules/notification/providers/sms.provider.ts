@@ -1,13 +1,16 @@
 import logger from '../../../shared/utils/logger';
 
 export class SmsProvider {
-  static async sendSms(phone: string, message: string) {
+  /**
+   * Send an SMS
+   */
+  async sendSms(to: string, message: string) {
     try {
-      logger.info(`Sending SMS to ${phone}: ${message}`);
-      // Integrate with Twilio or similar here
-      return true;
+      logger.info(`Sending SMS to ${to}: ${message}`);
+      // Implement Twilio SMS or AWS SNS logic here
+      return { success: true };
     } catch (error) {
-      logger.error('SMS Send Error:', error);
+      logger.error('SMS Provider Error:', error);
       throw error;
     }
   }

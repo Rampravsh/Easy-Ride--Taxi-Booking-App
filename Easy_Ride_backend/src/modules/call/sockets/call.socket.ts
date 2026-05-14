@@ -4,10 +4,11 @@ import { CallService } from '../call.service';
 import { SocketEvents } from '../../../sockets/socket.constants';
 import logger from '../../../shared/utils/logger';
 
-export class CallHandler {
+export class CallSocket {
   private callService: CallService;
 
   constructor(private io: Server, private socket: AuthenticatedSocket) {
+
     this.callService = new CallService();
   }
 

@@ -1,10 +1,12 @@
-import razorpay from '../../config/razorpay';
+import razorpay from '../../../config/razorpay';
 import crypto from 'crypto';
-import { ApiError } from '../../shared/errors/ApiError';
+import { ApiError } from '../../../shared/errors/ApiError';
+
 
 import httpStatus from 'http-status';
 
-export class RazorpayService {
+export class RazorpayProvider {
+
   /**
    * Create a new order in Razorpay
    */

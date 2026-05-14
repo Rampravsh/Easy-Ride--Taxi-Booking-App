@@ -13,6 +13,8 @@ import {
 } from './ride.types';
 import { IRide } from './ride.interface';
 import { RIDE_CONSTANTS } from './ride.constants';
+import logger from '../../shared/utils/logger';
+
 
 export class RideService {
   private rideRepository: RideRepository;
@@ -252,4 +254,18 @@ export class RideService {
     if (!ride) throw new ApiError('Ride not found', 404);
     return this.formatRideResponse(ride);
   }
+
+  /**
+   * Activate a scheduled ride (start matching)
+   */
+  async activateScheduledRide(rideId: string): Promise<void> {
+    const ride = await this.rideRepository.findById(rideId);
+    if (!ride) return;
+
+    if (ride.status === RideStatus.SEARCHING) {
+      // Logic for triggering matching process
+      logger.info(`Activating matching for scheduled ride: ${rideId}`);
+    }
+  }
 }
+

@@ -4,10 +4,11 @@ import { ChatService } from '../chat.service';
 import { SocketEvents, SOCKET_ROOMS } from '../../../sockets/socket.constants';
 import logger from '../../../shared/utils/logger';
 
-export class ChatHandler {
+export class ChatSocket {
   private chatService: ChatService;
 
   constructor(private io: Server, private socket: AuthenticatedSocket) {
+
     this.chatService = new ChatService();
   }
 

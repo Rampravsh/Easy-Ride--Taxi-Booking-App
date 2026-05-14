@@ -1,5 +1,6 @@
 import { Types, startSession } from 'mongoose';
-import { RazorpayService } from './razorpay.service';
+import { RazorpayProvider } from './providers/razorpay.provider';
+
 import { TransactionRepository } from '../transaction/transaction.repository';
 import { WalletService } from '../wallet/wallet.service';
 import { ApiError } from '../../shared/errors/ApiError';
@@ -21,7 +22,7 @@ export class PaymentService {
   async createTopupOrder(userId: string, amount: number) {
     // 1. Create Razorpay Order
     const receipt = `topup_${Date.now()}_${userId.toString().slice(-4)}`;
-    const order = await RazorpayService.createOrder(amount, 'INR', receipt);
+    const order = await RazorpayProvider.createOrder(amount, 'INR', receipt);
 
     // 2. Create Pending Transaction Record
     await this.transactionRepository.create({
@@ -43,7 +44,7 @@ export class PaymentService {
    */
   async verifyTopupPayment(userId: string, orderId: string, paymentId: string, signature: string) {
     // 1. Verify Signature
-    const isValid = RazorpayService.verifySignature(orderId, paymentId, signature);
+    const isValid = RazorpayProvider.verifySignature(orderId, paymentId, signature);
     if (!isValid) {
       throw new ApiError('Invalid payment signature', httpStatus.BAD_REQUEST);
     }
@@ -114,7 +115,8 @@ export class PaymentService {
 
     try {
       // 1. Initiate Razorpay Refund
-      const refund = await RazorpayService.createRefund(transaction.gatewayPaymentId, amount);
+      const refund = await RazorpayProvider.createRefund(transaction.gatewayPaymentId, amount);
+
 
       // 2. Create Refund Transaction Record
       const refundTransaction = await this.transactionRepository.create({

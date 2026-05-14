@@ -1,13 +1,16 @@
 import logger from '../../../shared/utils/logger';
 
 export class EmailProvider {
-  static async sendEmail(to: string, subject: string, body: string) {
+  /**
+   * Send an email
+   */
+  async sendEmail(to: string, subject: string, body: string) {
     try {
-      logger.info(`Sending Email to ${to}: ${subject}`);
-      // Integrate with Nodemailer or SendGrid here
-      return true;
+      logger.info(`Sending email to ${to}: ${subject}`);
+      // Implement NodeMailer or SendGrid logic here
+      return { success: true };
     } catch (error) {
-      logger.error('Email Send Error:', error);
+      logger.error('Email Provider Error:', error);
       throw error;
     }
   }

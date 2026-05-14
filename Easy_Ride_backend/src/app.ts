@@ -22,7 +22,9 @@ import poolRoutes from './modules/pool/pool.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
 import monitoringRoutes from './modules/monitoring/monitoring.routes';
+import reviewRoutes from './modules/review/review.routes';
 import { correlationMiddleware } from './modules/observability/correlation.middleware';
+
 import { ApiResponse } from './shared/utils/apiResponse';
 
 
@@ -64,6 +66,8 @@ app.use('/api/v1/pool', poolRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/monitoring', monitoringRoutes);
+app.use('/api/v1/reviews', reviewRoutes);
+
 
 
 

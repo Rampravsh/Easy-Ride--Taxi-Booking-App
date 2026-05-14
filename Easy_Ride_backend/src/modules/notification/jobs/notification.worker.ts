@@ -29,19 +29,23 @@ export const notificationWorker = new Worker(
         switch (type) {
           case DeliveryType.PUSH:
             if (tokens && tokens.length > 0) {
-              return FirebaseProvider.sendMulticast(tokens, title, body, data);
+              const firebaseProvider = new FirebaseProvider();
+              return firebaseProvider.sendPushNotification(tokens, title, body, data);
             }
             break;
           case DeliveryType.EMAIL:
             if (email) {
-              return EmailProvider.sendEmail(email, title, body);
+              const emailProvider = new EmailProvider();
+              return emailProvider.sendEmail(email, title, body);
             }
             break;
           case DeliveryType.SMS:
             if (phone) {
-              return SmsProvider.sendSms(phone, body);
+              const smsProvider = new SmsProvider();
+              return smsProvider.sendSms(phone, body);
             }
             break;
+
           default:
             break;
         }
