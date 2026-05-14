@@ -1,6 +1,7 @@
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import logger from '../shared/utils/logger';
+import { SocketServer } from '../sockets/socket.server';
 
 let io: Server;
 
@@ -20,22 +21,10 @@ export const initSocket = (server: HttpServer): Server => {
     pingInterval: 25000,
   });
 
-  // Basic connection handler
-  io.on('connection', (socket: Socket) => {
-    logger.info(`New client connected: ${socket.id}`);
+  // Initialize the Modular Socket Server
+  new SocketServer(io);
 
-    // Standard disconnect handler
-    socket.on('disconnect', (reason) => {
-      logger.info(`Client disconnected: ${socket.id} (${reason})`);
-    });
-
-    // Error handler
-    socket.on('error', (error) => {
-      logger.error(`Socket error for client ${socket.id}:`, error);
-    });
-  });
-
-  logger.info('Socket.io initialized successfully');
+  logger.info('🚀 Modular Socket.io server initialized');
   return io;
 };
 
