@@ -26,6 +26,28 @@ export enum PaymentMethod {
   ONLINE = 'online',
 }
 
+export enum TransactionType {
+  CREDIT = 'credit',
+  DEBIT = 'debit',
+  REFUND = 'refund',
+}
+
+export enum TransactionCategory {
+  RIDE_PAYMENT = 'ride_payment',
+  WALLET_TOPUP = 'wallet_topup',
+  CASHBACK = 'cashback',
+  REWARD = 'reward',
+  CANCELLATION_REFUND = 'cancellation_refund',
+  RIDER_PAYOUT = 'rider_payout',
+}
+
+export enum TransactionStatus {
+  PENDING = 'pending',
+  SUCCESS = 'success',
+  FAILED = 'failed',
+  REFUNDED = 'refunded',
+}
+
 
 export enum VehicleType {
   BIKE = 'bike',

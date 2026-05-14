@@ -10,6 +10,9 @@ import userRoutes from './modules/user/user.routes';
 import rideRoutes from './modules/ride/ride.routes';
 import riderRoutes from './modules/rider/rider.routes';
 import vehicleRoutes from './modules/vehicle/vehicle.routes';
+import walletRoutes from './modules/wallet/wallet.routes';
+import transactionRoutes from './modules/transaction/transaction.routes';
+import paymentRoutes from './modules/payment/payment.routes';
 import { ApiResponse } from './shared/utils/apiResponse';
 
 const app: Application = express();
@@ -33,6 +36,10 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/riders', riderRoutes);
 app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/rides', rideRoutes);
+app.use('/api/v1/wallet', walletRoutes);
+app.use('/api/v1/transactions', transactionRoutes);
+app.use('/api/v1/payments', paymentRoutes);
+
 
 
 // Root Route

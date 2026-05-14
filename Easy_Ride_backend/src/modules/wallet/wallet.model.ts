@@ -1,16 +1,38 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { Schema, model } from 'mongoose';
+import { IWalletDocument } from './wallet.interface';
 
-export interface IWallet extends Document {
-  user: mongoose.Types.ObjectId;
-  balance: number;
-}
-
-const walletSchema: Schema = new Schema(
+const walletSchema = new Schema<IWalletDocument>(
   {
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-    balance: { type: Number, default: 0 },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'User ID is required'],
+      unique: true,
+    },
+    balance: {
+      type: Number,
+      default: 0,
+      min: [0, 'Balance cannot be negative'],
+    },
+    currency: {
+      type: String,
+      default: 'INR',
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    lastTransaction: {
+      type: Schema.Types.ObjectId,
+      ref: 'Transaction',
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.model<IWallet>('Wallet', walletSchema);
+// Index for faster queries
+walletSchema.index({ user: 1 });
+
+export const Wallet = model<IWalletDocument>('Wallet', walletSchema);

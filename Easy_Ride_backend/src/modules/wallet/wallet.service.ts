@@ -1,55 +1,120 @@
-import Wallet from './wallet.model';
-import WalletTransaction, { TransactionType } from './walletTransaction.model';
+import { ClientSession, Types } from 'mongoose';
+import { WalletRepository } from './wallet.repository';
+import { TransactionRepository } from '../transaction/transaction.repository';
 import { ApiError } from '../../shared/errors/ApiError';
-import mongoose from 'mongoose';
+import httpStatus from 'http-status';
+import { TransactionType, TransactionCategory, TransactionStatus } from '../../shared/enums';
 
 export class WalletService {
-  async getWallet(userId: string) {
-    let wallet = await Wallet.findOne({ user: userId });
+  private walletRepository: WalletRepository;
+  private transactionRepository: TransactionRepository;
+
+  constructor() {
+    this.walletRepository = new WalletRepository();
+    this.transactionRepository = new TransactionRepository();
+  }
+
+  /**
+   * Get wallet by user ID, create if doesn't exist
+   */
+  async getOrCreateWallet(userId: string | Types.ObjectId, session?: ClientSession) {
+    let wallet = await this.walletRepository.findByUserId(userId, session);
     if (!wallet) {
-      wallet = await Wallet.create({ user: userId, balance: 0 });
+      wallet = await this.walletRepository.create({ user: new Types.ObjectId(userId) }, session);
     }
     return wallet;
   }
 
-  async addFunds(userId: string, amount: number, description: string = 'Deposit') {
-    const wallet = await this.getWallet(userId);
-    
-    wallet.balance += amount;
-    await wallet.save();
+  /**
+   * Credit money to wallet
+   */
+  async creditWallet(
+    userId: string | Types.ObjectId,
+    amount: number,
+    category: TransactionCategory,
+    description: string,
+    metadata?: any,
+    session?: ClientSession
+  ) {
+    const wallet = await this.getOrCreateWallet(userId, session);
 
-    await WalletTransaction.create({
-      wallet: wallet._id,
+    if (wallet.isBlocked) {
+      throw new ApiError('Wallet is blocked', httpStatus.FORBIDDEN);
+    }
+
+    // 1. Update Balance
+    const updatedWallet = await this.walletRepository.updateBalance(userId, amount, session);
+    if (!updatedWallet) {
+      throw new ApiError('Failed to update wallet balance', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // 2. Create Transaction Audit
+    const transaction = await this.transactionRepository.create({
+      user: new Types.ObjectId(userId),
+      wallet: updatedWallet._id as Types.ObjectId,
       amount,
-      type: TransactionType.DEPOSIT,
+      transactionType: TransactionType.CREDIT,
+      transactionCategory: category,
+      status: TransactionStatus.SUCCESS,
       description,
-    });
+      metadata,
+    }, session);
 
-    return wallet;
+    // 3. Update Last Transaction Reference
+    await this.walletRepository.updateLastTransaction(userId, transaction._id as Types.ObjectId, session);
+
+    return { wallet: updatedWallet, transaction };
   }
 
-  async deductFunds(userId: string, amount: number, description: string) {
-    const wallet = await this.getWallet(userId);
+  /**
+   * Debit money from wallet
+   */
+  async debitWallet(
+    userId: string | Types.ObjectId,
+    amount: number,
+    category: TransactionCategory,
+    description: string,
+    metadata?: any,
+    session?: ClientSession
+  ) {
+    const wallet = await this.getOrCreateWallet(userId, session);
+
+    if (wallet.isBlocked) {
+      throw new ApiError('Wallet is blocked', httpStatus.FORBIDDEN);
+    }
 
     if (wallet.balance < amount) {
-      throw new ApiError('Insufficient wallet balance', 400);
+      throw new ApiError('Insufficient wallet balance', httpStatus.BAD_REQUEST);
     }
 
-    wallet.balance -= amount;
-    await wallet.save();
+    // 1. Update Balance (using negative amount for debit)
+    const updatedWallet = await this.walletRepository.updateBalance(userId, -amount, session);
+    if (!updatedWallet) {
+      throw new ApiError('Failed to update wallet balance', httpStatus.INTERNAL_SERVER_ERROR);
+    }
 
-    await WalletTransaction.create({
-      wallet: wallet._id,
+    // 2. Create Transaction Audit
+    const transaction = await this.transactionRepository.create({
+      user: new Types.ObjectId(userId),
+      wallet: updatedWallet._id as Types.ObjectId,
       amount,
-      type: TransactionType.PAYMENT,
+      transactionType: TransactionType.DEBIT,
+      transactionCategory: category,
+      status: TransactionStatus.SUCCESS,
       description,
-    });
+      metadata,
+    }, session);
 
-    return wallet;
+    // 3. Update Last Transaction Reference
+    await this.walletRepository.updateLastTransaction(userId, transaction._id as Types.ObjectId, session);
+
+    return { wallet: updatedWallet, transaction };
   }
 
-  async getTransactions(userId: string) {
-    const wallet = await this.getWallet(userId);
-    return await WalletTransaction.find({ wallet: wallet._id }).sort({ createdAt: -1 });
+  /**
+   * Lock/Unlock wallet
+   */
+  async toggleWalletLock(userId: string | Types.ObjectId, isBlocked: boolean) {
+    return await this.walletRepository.updateLockStatus(userId, isBlocked);
   }
 }
