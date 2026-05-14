@@ -55,3 +55,36 @@ export enum VehicleType {
   AUTO = 'auto',
   LUXURY = 'luxury',
 }
+
+export enum NotificationType {
+  RIDE_UPDATE = 'ride_update',
+  PAYMENT_UPDATE = 'payment_update',
+  REFUND_UPDATE = 'refund_update',
+  CHAT_MESSAGE = 'chat_message',
+  CALL_NOTIFICATION = 'call_notification',
+  PROMO = 'promo',
+  REMINDER = 'reminder',
+  SYSTEM_ALERT = 'system_alert',
+}
+
+export enum DeliveryType {
+  PUSH = 'push',
+  EMAIL = 'email',
+  SMS = 'sms',
+  IN_APP = 'in_app',
+}
+
+export enum NotificationStatus {
+  PENDING = 'pending',
+  QUEUED = 'queued',
+  SENT = 'sent',
+  DELIVERED = 'delivered',
+  FAILED = 'failed',
+  READ = 'read',
+}
+
+export enum RecipientType {
+  USER = 'user',
+  RIDER = 'rider',
+  ADMIN = 'admin',
+}

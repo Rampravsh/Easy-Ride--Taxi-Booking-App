@@ -13,7 +13,9 @@ import vehicleRoutes from './modules/vehicle/vehicle.routes';
 import walletRoutes from './modules/wallet/wallet.routes';
 import transactionRoutes from './modules/transaction/transaction.routes';
 import paymentRoutes from './modules/payment/payment.routes';
+import notificationRoutes from './modules/notification/notification.routes';
 import { ApiResponse } from './shared/utils/apiResponse';
+
 
 const app: Application = express();
 
@@ -39,6 +41,8 @@ app.use('/api/v1/rides', rideRoutes);
 app.use('/api/v1/wallet', walletRoutes);
 app.use('/api/v1/transactions', transactionRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+
 
 
 

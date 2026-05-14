@@ -39,3 +39,5 @@ const initializeFirebase = () => {
 
 export const firebaseAdmin = initializeFirebase();
 export const firebaseAuth = admin.auth();
+export const firebaseMessaging = admin.messaging();
+
