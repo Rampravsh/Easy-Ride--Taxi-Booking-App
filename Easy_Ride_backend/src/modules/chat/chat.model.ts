@@ -1,22 +1,54 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { Schema, model } from 'mongoose';
+import { IMessageDocument } from './chat.interface';
+import { MessageType, MessageStatus } from '../../shared/enums';
 
-export interface IMessage extends Document {
-  ride: mongoose.Types.ObjectId;
-  sender: mongoose.Types.ObjectId;
-  receiver: mongoose.Types.ObjectId;
-  message: string;
-  isRead: boolean;
-}
-
-const messageSchema: Schema = new Schema(
+const messageSchema = new Schema<IMessageDocument>(
   {
-    ride: { type: Schema.Types.ObjectId, ref: 'Ride', required: true },
-    sender: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    receiver: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    message: { type: String, required: true },
-    isRead: { type: Boolean, default: false },
+    ride: {
+      type: Schema.Types.ObjectId,
+      ref: 'Ride',
+      required: true,
+      index: true,
+    },
+    sender: {
+      type: Schema.Types.ObjectId,
+      required: true,
+    },
+    receiver: {
+      type: Schema.Types.ObjectId,
+      required: true,
+    },
+    messageType: {
+      type: String,
+      enum: Object.values(MessageType),
+      default: MessageType.TEXT,
+    },
+    content: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: Object.values(MessageStatus),
+      default: MessageStatus.SENT,
+    },
+    metadata: {
+      type: Schema.Types.Mixed,
+    },
+    deliveredAt: {
+      type: Date,
+    },
+    readAt: {
+      type: Date,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.model<IMessage>('Message', messageSchema);
+// Indexes for fast querying
+messageSchema.index({ ride: 1, createdAt: -1 });
+messageSchema.index({ receiver: 1, status: 1 });
+
+export const Message = model<IMessageDocument>('Message', messageSchema);

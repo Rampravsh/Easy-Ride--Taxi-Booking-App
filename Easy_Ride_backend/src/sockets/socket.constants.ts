@@ -20,7 +20,24 @@ export enum SocketEvents {
 
   // Notification Events
   NOTIFICATION_RECEIVED = 'notification:received',
+
+  // Chat Events
+  CHAT_SEND = 'chat:send',
+  CHAT_RECEIVE = 'chat:receive',
+  CHAT_TYPING = 'chat:typing',
+  CHAT_DELIVERED = 'chat:delivered',
+  CHAT_READ = 'chat:read',
+
+  // Call Events
+  CALL_INITIATE = 'call:initiate',
+  CALL_INCOMING = 'call:incoming',
+  CALL_RINGING = 'call:ringing',
+  CALL_ACCEPTED = 'call:accepted',
+  CALL_REJECTED = 'call:rejected',
+  CALL_ENDED = 'call:ended',
+  CALL_MISSED = 'call:missed',
 }
+
 
 export const SOCKET_ROOMS = {
   USER: (userId: string) => `user:${userId}`,

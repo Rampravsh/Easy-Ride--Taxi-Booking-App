@@ -88,3 +88,33 @@ export enum RecipientType {
   RIDER = 'rider',
   ADMIN = 'admin',
 }
+
+export enum MessageType {
+  TEXT = 'text',
+  IMAGE = 'image',
+  AUDIO = 'audio',
+  LOCATION = 'location',
+  SYSTEM = 'system',
+}
+
+export enum MessageStatus {
+  SENT = 'sent',
+  DELIVERED = 'delivered',
+  READ = 'read',
+  FAILED = 'failed',
+}
+
+export enum CallType {
+  AUDIO = 'audio',
+  VIDEO = 'video',
+}
+
+export enum CallStatus {
+  INITIATED = 'initiated',
+  RINGING = 'ringing',
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
+  MISSED = 'missed',
+  ENDED = 'ended',
+  FAILED = 'failed',
+}
