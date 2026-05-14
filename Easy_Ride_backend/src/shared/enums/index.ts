@@ -118,3 +118,33 @@ export enum CallStatus {
   ENDED = 'ended',
   FAILED = 'failed',
 }
+
+export enum PromoType {
+  DISCOUNT = 'discount',
+  CASHBACK = 'cashback',
+  REFERRAL = 'referral',
+}
+
+export enum DiscountType {
+  PERCENTAGE = 'percentage',
+  FLAT = 'flat',
+}
+
+export enum ScheduleStatus {
+  PENDING = 'pending',
+  SCHEDULED = 'scheduled',
+  SEARCHING = 'searching',
+  ASSIGNED = 'assigned',
+  STARTED = 'started',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  EXPIRED = 'expired',
+}
+
+export enum PoolStatus {
+  AVAILABLE = 'available',
+  MATCHING = 'matching',
+  ONGOING = 'ongoing',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}

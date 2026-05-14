@@ -16,7 +16,11 @@ import paymentRoutes from './modules/payment/payment.routes';
 import notificationRoutes from './modules/notification/notification.routes';
 import chatRoutes from './modules/chat/chat.routes';
 import callRoutes from './modules/call/call.routes';
+import promoRoutes from './modules/promo/promo.routes';
+import scheduleRoutes from './modules/schedule/schedule.routes';
+import poolRoutes from './modules/pool/pool.routes';
 import { ApiResponse } from './shared/utils/apiResponse';
+
 
 
 
@@ -47,6 +51,10 @@ app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/calls', callRoutes);
+app.use('/api/v1/promos', promoRoutes);
+app.use('/api/v1/schedules', scheduleRoutes);
+app.use('/api/v1/pool', poolRoutes);
+
 
 
 
