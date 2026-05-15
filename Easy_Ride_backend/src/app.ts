@@ -5,8 +5,7 @@ import loggerMiddleware from './middlewares/logger.middleware';
 import cookieParser from 'cookie-parser';
 import { apiLimiter } from './middlewares/rateLimit.middleware';
 import { errorMiddleware } from './middlewares/error.middleware';
-import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './docs/swagger-config';
+import { setupSwagger } from './docs/swagger/swagger.setup';
 import authRoutes from './modules/auth/auth.routes';
 import userRoutes from './modules/user/user.routes';
 import rideRoutes from './modules/ride/ride.routes';
@@ -47,7 +46,7 @@ app.use(cookieParser());
 app.use('/api', apiLimiter);
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+setupSwagger(app);
 
 // Routes
 app.use('/api/v1/auth', authRoutes);
