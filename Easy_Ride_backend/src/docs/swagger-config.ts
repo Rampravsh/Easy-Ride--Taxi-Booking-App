@@ -9,7 +9,7 @@ const options: swaggerJsdoc.Options = {
       description: 'Production-grade ride-booking platform API',
       contact: {
         name: 'Easy Ride Engineering',
-        email: 'dev@easyride.com',
+        email: 'rampraveshkr4545@gmail.com',
       },
     },
     servers: [

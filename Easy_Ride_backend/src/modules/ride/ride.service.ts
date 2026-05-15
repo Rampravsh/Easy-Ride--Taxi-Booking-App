@@ -14,6 +14,7 @@ import {
 import { IRide } from './ride.interface';
 import { RIDE_CONSTANTS } from './ride.constants';
 import logger from '../../shared/utils/logger';
+import { calculateDistance } from '../../shared/helpers/distance.helper';
 
 
 export class RideService {
@@ -58,16 +59,21 @@ export class RideService {
    * Get fare estimation
    */
   async estimateFare(data: FareEstimateDTO): Promise<FareEstimateResponse> {
-    // For now, using a mock distance calculation or just random values
-    // In real app, we would use Google Maps Matrix API or similar
-    const mockDistanceInMeters = 5000; // 5km
-    const mockDurationInSeconds = 900; // 15 mins
+    // Calculate actual straight-line distance using geolib
+    const distanceInMeters = calculateDistance(
+      { latitude: data.pickupCoordinates[1], longitude: data.pickupCoordinates[0] },
+      { latitude: data.dropCoordinates[1], longitude: data.dropCoordinates[0] }
+    );
 
-    const fare = RideHelper.calculateFare(mockDistanceInMeters, mockDurationInSeconds);
+    // Estimate duration based on average city speed (e.g., 20 km/h = 5.55 m/s)
+    const averageSpeedMps = 5.55; 
+    const estimatedDurationSeconds = Math.round(distanceInMeters / averageSpeedMps);
+
+    const fare = RideHelper.calculateFare(distanceInMeters, estimatedDurationSeconds);
 
     return {
-      estimatedDistance: mockDistanceInMeters,
-      estimatedDuration: mockDurationInSeconds,
+      estimatedDistance: distanceInMeters,
+      estimatedDuration: estimatedDurationSeconds,
       ...fare,
     };
   }
@@ -82,10 +88,16 @@ export class RideService {
       throw new ApiError('You already have an active ride request', 400);
     }
 
-    // 2. Calculate fare (re-calculate for security)
-    const mockDistance = 5000; 
-    const mockDuration = 900;
-    const fareDetails = RideHelper.calculateFare(mockDistance, mockDuration);
+    // 2. Calculate actual distance and fare
+    const distanceInMeters = calculateDistance(
+      { latitude: data.pickupCoordinates[1], longitude: data.pickupCoordinates[0] },
+      { latitude: data.dropCoordinates[1], longitude: data.dropCoordinates[0] }
+    );
+    
+    const averageSpeedMps = 5.55; 
+    const durationInSeconds = Math.round(distanceInMeters / averageSpeedMps);
+    
+    const fareDetails = RideHelper.calculateFare(distanceInMeters, durationInSeconds);
 
     // 3. Find nearby riders (Initial check)
     const nearbyRiders = await this.riderRepository.findNearbyRiders(
@@ -114,8 +126,8 @@ export class RideService {
         coordinates: data.dropCoordinates,
         address: data.dropAddress,
       },
-      estimatedDistance: mockDistance,
-      estimatedDuration: mockDuration,
+      estimatedDistance: distanceInMeters,
+      estimatedDuration: durationInSeconds,
       ...fareDetails,
       paymentMethod: data.paymentMethod,
       otp: RideHelper.generateOTP(),
