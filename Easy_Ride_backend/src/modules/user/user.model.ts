@@ -76,10 +76,8 @@ const userSchema: Schema = new Schema(
   }
 );
 
-// Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ phone: 1 });
-userSchema.index({ firebaseUID: 1 });
+// Indexes (Additional compound or complex indexes can be added here)
+
 
 // Static methods or instance methods can be added here if needed
 

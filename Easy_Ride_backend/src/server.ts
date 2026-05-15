@@ -1,4 +1,7 @@
 import dotenv from 'dotenv';
+// Load environment variables
+dotenv.config();
+
 import http from 'http';
 import connectDB from './config/db';
 import app from './app';
@@ -9,9 +12,6 @@ import { initSocket } from './config/socket';
 import './modules/notification/jobs/notification.worker';
 import './modules/schedule/queues/scheduledRide.worker';
 
-
-// Load environment variables
-dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 

@@ -32,7 +32,7 @@ const walletSchema = new Schema<IWalletDocument>(
   }
 );
 
-// Index for faster queries
-walletSchema.index({ user: 1 });
+// Index for faster queries handled by unique: true on user field
+
 
 export const Wallet = model<IWalletDocument>('Wallet', walletSchema);
