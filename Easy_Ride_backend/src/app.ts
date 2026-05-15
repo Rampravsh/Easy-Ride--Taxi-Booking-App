@@ -5,6 +5,8 @@ import loggerMiddleware from './middlewares/logger.middleware';
 import cookieParser from 'cookie-parser';
 import { apiLimiter } from './middlewares/rateLimit.middleware';
 import { errorMiddleware } from './middlewares/error.middleware';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './docs/swagger-config';
 import authRoutes from './modules/auth/auth.routes';
 import userRoutes from './modules/user/user.routes';
 import rideRoutes from './modules/ride/ride.routes';
@@ -27,10 +29,6 @@ import { correlationMiddleware } from './modules/observability/correlation.middl
 
 import { ApiResponse } from './shared/utils/apiResponse';
 
-
-
-
-
 const app: Application = express();
 
 // Middlewares
@@ -47,6 +45,9 @@ app.use(cookieParser());
 
 // Rate limiting
 app.use('/api', apiLimiter);
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
 app.use('/api/v1/auth', authRoutes);
