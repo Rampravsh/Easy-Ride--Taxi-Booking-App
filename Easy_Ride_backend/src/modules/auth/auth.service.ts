@@ -29,18 +29,22 @@ export class AuthService {
         // 3. Create user if not exists
         user = await this.userRepository.create({
           firebaseUID: uid,
-          name: name || 'User',
+          fullName: name || 'User',
           email: email,
           phone: phone_number,
           role: requestedRole,
-          avatar: picture,
-          isVerified: true, // Firebase users are typically verified
+          profileImage: picture,
         });
 
         // 4. If role is Rider, create a Rider profile
         if (requestedRole === UserRole.RIDER) {
           await Rider.create({
-            user: user._id,
+            user: user._id as any, // Cast to any to avoid potential mongoose version mismatches
+            firebaseUID: uid,
+            fullName: user.fullName,
+            email: user.email,
+            phone: user.phone,
+            role: UserRole.RIDER,
             licenseNumber: 'PENDING', // To be updated by rider later
           });
         }
@@ -50,7 +54,7 @@ export class AuthService {
         _id: user._id,
         firebaseUID: user.firebaseUID,
         role: user.role,
-        name: user.name,
+        name: user.fullName,
         email: user.email,
         phone: user.phone,
       };

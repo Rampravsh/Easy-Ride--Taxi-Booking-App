@@ -1,8 +1,43 @@
+// =============================================================================
+// EASY RIDE — CENTRALIZED ENUM DEFINITIONS
+// Single authoritative source for ALL enums across all modules.
+// DO NOT define domain enums locally in module files — import from here.
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// USER & AUTH
+// ---------------------------------------------------------------------------
+
 export enum UserRole {
   USER = 'user',
   RIDER = 'rider',
   ADMIN = 'admin',
 }
+
+export enum AdminRole {
+  SUPER_ADMIN = 'super_admin',
+  OPERATIONS_ADMIN = 'operations_admin',
+  SUPPORT_ADMIN = 'support_admin',
+  FINANCE_ADMIN = 'finance_admin',
+  ANALYTICS_ADMIN = 'analytics_admin',
+}
+
+/**
+ * All roles that are considered admin-level (for broad RBAC checks).
+ * Use AdminRole enum for fine-grained access.
+ */
+export const ALL_ADMIN_ROLES: AdminRole[] = Object.values(AdminRole);
+
+export enum AuthProvider {
+  FIREBASE = 'firebase',
+  GOOGLE = 'google',
+  PHONE = 'phone',
+  EMAIL = 'email',
+}
+
+// ---------------------------------------------------------------------------
+// RIDE LIFECYCLE
+// ---------------------------------------------------------------------------
 
 export enum RideStatus {
   SEARCHING = 'searching',
@@ -12,6 +47,10 @@ export enum RideStatus {
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
+
+// ---------------------------------------------------------------------------
+// PAYMENT & WALLET
+// ---------------------------------------------------------------------------
 
 export enum PaymentStatus {
   PENDING = 'pending',
@@ -24,6 +63,12 @@ export enum PaymentMethod {
   CASH = 'cash',
   WALLET = 'wallet',
   ONLINE = 'online',
+}
+
+export enum PaymentGateway {
+  RAZORPAY = 'razorpay',
+  MANUAL = 'manual',
+  SYSTEM = 'system',
 }
 
 export enum TransactionType {
@@ -39,6 +84,9 @@ export enum TransactionCategory {
   REWARD = 'reward',
   CANCELLATION_REFUND = 'cancellation_refund',
   RIDER_PAYOUT = 'rider_payout',
+  POOL_PAYMENT = 'pool_payment',
+  SCHEDULED_RIDE_PAYMENT = 'scheduled_ride_payment',
+  PROMO_CASHBACK = 'promo_cashback',
 }
 
 export enum TransactionStatus {
@@ -48,6 +96,9 @@ export enum TransactionStatus {
   REFUNDED = 'refunded',
 }
 
+// ---------------------------------------------------------------------------
+// VEHICLE
+// ---------------------------------------------------------------------------
 
 export enum VehicleType {
   BIKE = 'bike',
@@ -55,6 +106,21 @@ export enum VehicleType {
   AUTO = 'auto',
   LUXURY = 'luxury',
 }
+
+// ---------------------------------------------------------------------------
+// RIDER VERIFICATION
+// (was previously defined locally in rider.interface.ts — now centralized)
+// ---------------------------------------------------------------------------
+
+export enum VerificationStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
+// ---------------------------------------------------------------------------
+// NOTIFICATIONS
+// ---------------------------------------------------------------------------
 
 export enum NotificationType {
   RIDE_UPDATE = 'ride_update',
@@ -65,6 +131,8 @@ export enum NotificationType {
   PROMO = 'promo',
   REMINDER = 'reminder',
   SYSTEM_ALERT = 'system_alert',
+  FRAUD_ALERT = 'fraud_alert',
+  SCHEDULE_REMINDER = 'schedule_reminder',
 }
 
 export enum DeliveryType {
@@ -88,6 +156,10 @@ export enum RecipientType {
   RIDER = 'rider',
   ADMIN = 'admin',
 }
+
+// ---------------------------------------------------------------------------
+// CHAT & CALLS
+// ---------------------------------------------------------------------------
 
 export enum MessageType {
   TEXT = 'text',
@@ -119,6 +191,10 @@ export enum CallStatus {
   FAILED = 'failed',
 }
 
+// ---------------------------------------------------------------------------
+// PROMO
+// ---------------------------------------------------------------------------
+
 export enum PromoType {
   DISCOUNT = 'discount',
   CASHBACK = 'cashback',
@@ -129,6 +205,17 @@ export enum DiscountType {
   PERCENTAGE = 'percentage',
   FLAT = 'flat',
 }
+
+export enum PromoStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  EXPIRED = 'expired',
+  EXHAUSTED = 'exhausted',
+}
+
+// ---------------------------------------------------------------------------
+// SCHEDULING
+// ---------------------------------------------------------------------------
 
 export enum ScheduleStatus {
   PENDING = 'pending',
@@ -141,6 +228,10 @@ export enum ScheduleStatus {
   EXPIRED = 'expired',
 }
 
+// ---------------------------------------------------------------------------
+// POOLING
+// ---------------------------------------------------------------------------
+
 export enum PoolStatus {
   AVAILABLE = 'available',
   MATCHING = 'matching',
@@ -149,13 +240,9 @@ export enum PoolStatus {
   CANCELLED = 'cancelled',
 }
 
-export enum AdminRole {
-  SUPER_ADMIN = 'super_admin',
-  OPERATIONS_ADMIN = 'operations_admin',
-  SUPPORT_ADMIN = 'support_admin',
-  FINANCE_ADMIN = 'finance_admin',
-  ANALYTICS_ADMIN = 'analytics_admin',
-}
+// ---------------------------------------------------------------------------
+// FRAUD DETECTION
+// ---------------------------------------------------------------------------
 
 export enum FraudType {
   PROMO_ABUSE = 'promo_abuse',
@@ -165,16 +252,68 @@ export enum FraudType {
   FAKE_RIDE = 'fake_ride',
 }
 
+export enum FraudSeverity {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical',
+}
+
+// ---------------------------------------------------------------------------
+// AUDIT LOGGING
+// ---------------------------------------------------------------------------
+
 export enum AuditAction {
+  // User actions
   USER_UPDATE = 'user_update',
+  USER_BLOCK = 'user_block',
+  USER_UNBLOCK = 'user_unblock',
+
+  // Rider actions
   RIDER_VERIFY = 'rider_verify',
+  RIDER_BLOCK = 'rider_block',
+  RIDER_REJECT = 'rider_reject',
+
+  // Ride actions
+  RIDE_CANCEL = 'ride_cancel',
+  RIDE_COMPLETE = 'ride_complete',
+
+  // Payment & Wallet
   PAYMENT_REFUND = 'payment_refund',
+  REFUND_PROCESS = 'refund_process',
+  WALLET_LOCK = 'wallet_lock',
+  WALLET_UNLOCK = 'wallet_unlock',
+
+  // Promo actions
   PROMO_CREATE = 'promo_create',
-  SURGE_OVERRIDE = 'surge_override',
+  PROMO_UPDATE = 'promo_update',
+  PROMO_DELETE = 'promo_delete',
+
+  // Admin actions
   ADMIN_LOGIN = 'admin_login',
+  ADMIN_LOGOUT = 'admin_logout',
+  CONFIG_CHANGE = 'config_change',
+  SURGE_OVERRIDE = 'surge_override',
+
+  // Fraud actions
+  FRAUD_FLAG = 'fraud_flag',
+
+  // Schedule & Pool
+  SCHEDULE_CANCEL = 'schedule_cancel',
+  POOL_CANCEL = 'pool_cancel',
 }
 
 export enum AuditStatus {
   SUCCESS = 'success',
   FAILURE = 'failure',
+}
+
+// ---------------------------------------------------------------------------
+// REVIEW
+// ---------------------------------------------------------------------------
+
+export enum ReviewStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
 }

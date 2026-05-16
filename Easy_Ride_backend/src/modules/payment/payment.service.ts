@@ -5,7 +5,7 @@ import { TransactionRepository } from '../transaction/transaction.repository';
 import { WalletService } from '../wallet/wallet.service';
 import { ApiError } from '../../shared/errors/ApiError';
 import httpStatus from 'http-status';
-import { TransactionType, TransactionCategory, TransactionStatus } from '../../shared/enums';
+import { TransactionType, TransactionCategory, TransactionStatus, PaymentGateway } from '../../shared/enums';
 
 export class PaymentService {
   private transactionRepository: TransactionRepository;
@@ -31,7 +31,7 @@ export class PaymentService {
       transactionType: TransactionType.CREDIT,
       transactionCategory: TransactionCategory.WALLET_TOPUP,
       status: TransactionStatus.PENDING,
-      paymentGateway: 'razorpay',
+      paymentGateway: PaymentGateway.RAZORPAY,
       gatewayOrderId: order.id,
       description: 'Wallet Topup',
     });
@@ -125,7 +125,7 @@ export class PaymentService {
         transactionType: TransactionType.REFUND,
         transactionCategory: TransactionCategory.CANCELLATION_REFUND,
         status: TransactionStatus.SUCCESS,
-        paymentGateway: 'razorpay',
+        paymentGateway: PaymentGateway.RAZORPAY,
         metadata: { originalTransactionId: transactionId, refundId: refund.id, reason },
         description: `Refund for transaction ${transactionId}`,
       }, session);

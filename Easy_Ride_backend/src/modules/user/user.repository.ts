@@ -1,8 +1,15 @@
 import User from './user.model';
 import { IUser } from './user.interface';
-import { UpdateProfileDTO, SaveAddressDTO, UserPreferencesDTO } from './user.types';
+import { UpdateProfileDTO, SaveAddressDTO, UserPreferencesDTO, CreateUserDTO } from './user.types';
 
 export class UserRepository {
+  /**
+   * Create a new user
+   */
+  async create(userData: CreateUserDTO): Promise<IUser> {
+    return await User.create(userData);
+  }
+
   /**
    * Find user by Firebase UID
    */

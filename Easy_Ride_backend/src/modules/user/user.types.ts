@@ -25,6 +25,16 @@ export type UpdateProfileDTO = {
   profileImage?: string;
 };
 
+export type CreateUserDTO = {
+  firebaseUID: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  role: UserRole;
+  profileImage?: string;
+  authProvider?: AuthProvider;
+};
+
 export type SaveAddressDTO = {
   label: string;
   address: string;

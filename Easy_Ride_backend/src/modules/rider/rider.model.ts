@@ -15,6 +15,7 @@ const documentSchema = new Schema({
 
 const riderSchema: Schema = new Schema(
   {
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     firebaseUID: { type: String, required: true, unique: true, index: true },
     role: {
       type: String,
@@ -24,6 +25,7 @@ const riderSchema: Schema = new Schema(
     fullName: { type: String, required: true, trim: true },
     email: { type: String, sparse: true, lowercase: true, trim: true },
     phone: { type: String, sparse: true, trim: true },
+    licenseNumber: { type: String },
     profileImage: { type: String },
     authProvider: {
       type: String,

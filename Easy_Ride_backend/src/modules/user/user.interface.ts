@@ -1,12 +1,11 @@
 import { Document, Types } from 'mongoose';
-import { UserRole } from '../../shared/enums';
+import { UserRole, AuthProvider } from '../../shared/enums';
 
-export enum AuthProvider {
-  FIREBASE = 'firebase',
-  GOOGLE = 'google',
-  PHONE = 'phone',
-  EMAIL = 'email',
-}
+// ---------------------------------------------------------------------------
+// AuthProvider is now centralized in shared/enums.
+// Re-export for backward compatibility so existing imports don't break.
+// ---------------------------------------------------------------------------
+export { AuthProvider };
 
 export interface ICoordinates {
   type: 'Point';

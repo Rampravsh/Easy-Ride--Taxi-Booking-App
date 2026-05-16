@@ -1,11 +1,8 @@
-export const WALLET_LIMITS = {
-  MIN_TOPUP: 10,
-  MAX_TOPUP: 10000,
-  MAX_BALANCE: 50000,
-};
-
-export const WALLET_ERROR_MESSAGES = {
-  INSUFFICIENT_BALANCE: 'Insufficient wallet balance for this transaction',
-  WALLET_BLOCKED: 'Your wallet is blocked. Please contact support.',
-  NOT_FOUND: 'Wallet not found',
-};
+/**
+ * wallet.constants.ts
+ *
+ * SYNC NOTE: These constants are now derived from the canonical WALLET_CONFIG
+ * in shared/constants/app.constants.ts. This file re-exports them for backward
+ * compatibility with existing module imports.
+ */
+export { WALLET_CONFIG as WALLET_LIMITS, WALLET_ERROR_MESSAGES } from '../../shared/constants/app.constants';

@@ -1,12 +1,11 @@
 import { Document, Types } from 'mongoose';
-import { UserRole } from '../../shared/enums';
-import { AuthProvider } from '../user/user.interface';
+import { UserRole, VerificationStatus, AuthProvider } from '../../shared/enums';
 
-export enum VerificationStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-}
+// ---------------------------------------------------------------------------
+// VerificationStatus and AuthProvider are now centralized in shared/enums.
+// Re-export for backward compatibility so existing imports don't break.
+// ---------------------------------------------------------------------------
+export { VerificationStatus, AuthProvider };
 
 export interface IRiderDocument {
   url: string;
@@ -28,11 +27,13 @@ export interface IRiderLocation {
 }
 
 export interface IRider extends Document {
+  user: Types.ObjectId;
   firebaseUID: string;
   role: UserRole;
   fullName: string;
   email?: string;
   phone?: string;
+  licenseNumber?: string;
   profileImage?: string;
   authProvider: AuthProvider;
   isOnline: boolean;

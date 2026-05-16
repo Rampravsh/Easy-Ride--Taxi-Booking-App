@@ -1,5 +1,5 @@
 import { Document, Types } from 'mongoose';
-import { PromoType, DiscountType, VehicleType } from '../../shared/enums';
+import { PromoType, DiscountType, PromoStatus, VehicleType } from '../../shared/enums';
 
 export interface IPromo {
   code: string;
@@ -15,7 +15,9 @@ export interface IPromo {
   validUntil: Date;
   applicableRideTypes: VehicleType[];
   applicableCities: string[];
-  isActive: boolean;
+  isActive: boolean;               // kept for simple boolean checks
+  promoStatus: PromoStatus;        // structured status for admin workflows
+  createdBy?: Types.ObjectId;      // admin who created the promo
   metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;

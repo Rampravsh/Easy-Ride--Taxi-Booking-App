@@ -1,5 +1,6 @@
 import Rider from '../rider/rider.model';
 import { VerificationStatus } from '../rider/rider.interface';
+import { UserRole } from '../../shared/enums';
 import { redis } from '../../config/redis';
 import logger from '../../shared/utils/logger';
 
@@ -29,7 +30,7 @@ export class MatchingEngine {
             $maxDistance: radius * 1000, // convert to meters
           },
         },
-        role: 'rider',
+        role: UserRole.RIDER,  // Use enum — not hardcoded string
         isOnline: true,
         isAvailable: true,
         verificationStatus: VerificationStatus.APPROVED,

@@ -1,12 +1,16 @@
 import { Document, Types } from 'mongoose';
-import { TransactionType, TransactionCategory, TransactionStatus } from '../../shared/enums';
+import { TransactionType, TransactionCategory, TransactionStatus, PaymentGateway } from '../../shared/enums';
 
 export interface ITransaction {
   user: Types.ObjectId;
   rider?: Types.ObjectId;
   wallet?: Types.ObjectId;
   ride?: Types.ObjectId;
-  paymentGateway?: 'razorpay' | 'manual' | 'system';
+  /**
+   * Use PaymentGateway enum from shared/enums.
+   * Typed as string union for backward compat with existing records.
+   */
+  paymentGateway?: PaymentGateway | 'stripe';
   transactionType: TransactionType;
   transactionCategory: TransactionCategory;
   amount: number;

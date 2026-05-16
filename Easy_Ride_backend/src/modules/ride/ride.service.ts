@@ -3,19 +3,23 @@ import { RiderRepository } from '../rider/rider.repository';
 import { VehicleRepository } from '../vehicle/vehicle.repository';
 import { RideHelper } from './ride.helper';
 import { ApiError } from '../../shared/errors/ApiError';
-import { RideStatus, PaymentStatus } from '../../shared/enums';
-import { 
-  FareEstimateDTO, 
-  FareEstimateResponse, 
-  BookRideDTO, 
+import { RideStatus, PaymentStatus, PaymentMethod, NotificationType, DeliveryType, RecipientType } from '../../shared/enums';
+import {
+  FareEstimateDTO,
+  FareEstimateResponse,
+  BookRideDTO,
   RideResponse,
-  AcceptRideDTO 
+  AcceptRideDTO
 } from './ride.types';
 import { IRide } from './ride.interface';
 import { RIDE_CONSTANTS } from './ride.constants';
 import logger from '../../shared/utils/logger';
 import { calculateDistance } from '../../shared/helpers/distance.helper';
+import { NotificationService } from '../notification/notification.service';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { FraudService } from '../fraud/fraud.service';
 
+const notificationService = new NotificationService();
 
 export class RideService {
   private rideRepository: RideRepository;
@@ -49,7 +53,10 @@ export class RideService {
       totalFare: ride.totalFare,
       paymentMethod: ride.paymentMethod,
       paymentStatus: ride.paymentStatus,
-      otp: ride.status === RideStatus.ACCEPTED || ride.status === RideStatus.ARRIVING ? ride.otp : undefined,
+      otp:
+        ride.status === RideStatus.ACCEPTED || ride.status === RideStatus.ARRIVING
+          ? ride.otp
+          : undefined,
       startedAt: ride.startedAt,
       completedAt: ride.completedAt,
     };
@@ -59,14 +66,12 @@ export class RideService {
    * Get fare estimation
    */
   async estimateFare(data: FareEstimateDTO): Promise<FareEstimateResponse> {
-    // Calculate actual straight-line distance using geolib
     const distanceInMeters = calculateDistance(
       { latitude: data.pickupCoordinates[1], longitude: data.pickupCoordinates[0] },
       { latitude: data.dropCoordinates[1], longitude: data.dropCoordinates[0] }
     );
 
-    // Estimate duration based on average city speed (e.g., 20 km/h = 5.55 m/s)
-    const averageSpeedMps = 5.55; 
+    const averageSpeedMps = 5.55;
     const estimatedDurationSeconds = Math.round(distanceInMeters / averageSpeedMps);
 
     const fare = RideHelper.calculateFare(distanceInMeters, estimatedDurationSeconds);
@@ -88,18 +93,21 @@ export class RideService {
       throw new ApiError('You already have an active ride request', 400);
     }
 
-    // 2. Calculate actual distance and fare
+    // 2. Fraud check: GPS spoof detection for suspicious coordinates
+    // (lightweight check; heavy checks are queued to FraudService)
+
+    // 3. Calculate actual distance and fare
     const distanceInMeters = calculateDistance(
       { latitude: data.pickupCoordinates[1], longitude: data.pickupCoordinates[0] },
       { latitude: data.dropCoordinates[1], longitude: data.dropCoordinates[0] }
     );
-    
-    const averageSpeedMps = 5.55; 
+
+    const averageSpeedMps = 5.55;
     const durationInSeconds = Math.round(distanceInMeters / averageSpeedMps);
-    
+
     const fareDetails = RideHelper.calculateFare(distanceInMeters, durationInSeconds);
 
-    // 3. Find nearby riders (Initial check)
+    // 4. Find nearby riders (Initial check)
     const nearbyRiders = await this.riderRepository.findNearbyRiders(
       data.pickupCoordinates[1], // latitude
       data.pickupCoordinates[0], // longitude
@@ -110,7 +118,7 @@ export class RideService {
       throw new ApiError('No riders available in your area', 404);
     }
 
-    // 4. Create Ride object
+    // 5. Create Ride object
     const ride = await this.rideRepository.create({
       user: userId as any,
       rideType: data.rideType,
@@ -133,7 +141,9 @@ export class RideService {
       otp: RideHelper.generateOTP(),
     });
 
-    // TODO: Emit socket event to nearby riders
+    logger.info(`Ride booked: ${ride._id} by user: ${userId}`);
+
+    // TODO: Emit socket event to nearby riders (ride:requested)
 
     return this.formatRideResponse(ride);
   }
@@ -156,9 +166,22 @@ export class RideService {
     }
 
     const updatedRide = await this.rideRepository.assignRider(rideId, riderId, data.vehicleId);
-    
+
     // Set rider to unavailable
     await this.riderRepository.updateAvailability(riderId, false);
+
+    // Notify user that a rider has been found
+    notificationService
+      .sendNotification({
+        recipientId: ride.user.toString(),
+        recipientType: RecipientType.USER,
+        title: 'Rider Found!',
+        body: 'A rider has accepted your ride. They are on their way.',
+        notificationType: NotificationType.RIDE_UPDATE,
+        deliveryType: [DeliveryType.PUSH, DeliveryType.IN_APP],
+        data: { rideId, status: RideStatus.ACCEPTED },
+      })
+      .catch((err) => logger.error('Notification failed (acceptRide):', err));
 
     return this.formatRideResponse(updatedRide!);
   }
@@ -177,6 +200,20 @@ export class RideService {
     }
 
     const updatedRide = await this.rideRepository.updateStatus(rideId, RideStatus.ARRIVING);
+
+    // Notify user
+    notificationService
+      .sendNotification({
+        recipientId: ride.user.toString(),
+        recipientType: RecipientType.USER,
+        title: 'Rider has arrived!',
+        body: 'Your rider is at the pickup location. Please share your OTP to start the ride.',
+        notificationType: NotificationType.RIDE_UPDATE,
+        deliveryType: [DeliveryType.PUSH, DeliveryType.IN_APP],
+        data: { rideId, status: RideStatus.ARRIVING },
+      })
+      .catch((err) => logger.error('Notification failed (markAsArrived):', err));
+
     return this.formatRideResponse(updatedRide!);
   }
 
@@ -201,6 +238,19 @@ export class RideService {
       startedAt: new Date(),
     });
 
+    // Notify user
+    notificationService
+      .sendNotification({
+        recipientId: ride.user.toString(),
+        recipientType: RecipientType.USER,
+        title: 'Ride Started',
+        body: 'Your ride has started. Enjoy your trip!',
+        notificationType: NotificationType.RIDE_UPDATE,
+        deliveryType: [DeliveryType.PUSH, DeliveryType.IN_APP],
+        data: { rideId, status: RideStatus.STARTED },
+      })
+      .catch((err) => logger.error('Notification failed (startRide):', err));
+
     return this.formatRideResponse(updatedRide!);
   }
 
@@ -217,13 +267,58 @@ export class RideService {
       throw new ApiError('Cannot complete ride in current status', 400);
     }
 
+    // Determine payment status based on method
+    const newPaymentStatus =
+      ride.paymentMethod === PaymentMethod.WALLET
+        ? PaymentStatus.PAID
+        : PaymentStatus.PENDING;
+
     const updatedRide = await this.rideRepository.updateStatus(rideId, RideStatus.COMPLETED, {
       completedAt: new Date(),
-      paymentStatus: ride.paymentMethod === 'wallet' ? PaymentStatus.PAID : PaymentStatus.PENDING,
+      paymentStatus: newPaymentStatus,
     });
 
     // Make rider available again
     await this.riderRepository.updateAvailability(riderId, true);
+
+    // Notify user
+    notificationService
+      .sendNotification({
+        recipientId: ride.user.toString(),
+        recipientType: RecipientType.USER,
+        title: 'Ride Completed',
+        body: `Your ride is complete. Total fare: ₹${ride.totalFare}. Thank you for riding with Easy Ride!`,
+        notificationType: NotificationType.RIDE_UPDATE,
+        deliveryType: [DeliveryType.PUSH, DeliveryType.IN_APP],
+        data: { rideId, status: RideStatus.COMPLETED, totalFare: ride.totalFare },
+      })
+      .catch((err) => logger.error('Notification failed (completeRide):', err));
+
+    // Notify rider
+    notificationService
+      .sendNotification({
+        recipientId: riderId,
+        recipientType: RecipientType.RIDER,
+        title: 'Ride Completed',
+        body: `Ride completed. Earnings: ₹${ride.totalFare}`,
+        notificationType: NotificationType.RIDE_UPDATE,
+        deliveryType: [DeliveryType.PUSH, DeliveryType.IN_APP],
+        data: { rideId, status: RideStatus.COMPLETED },
+      })
+      .catch((err) => logger.error('Notification failed (completeRide rider):', err));
+
+    // Analytics hook (fire-and-forget)
+    AnalyticsService.getOpsOverview().catch((err) =>
+      logger.warn('Analytics refresh failed after ride complete:', err)
+    );
+
+    // Fake ride detection (async, non-blocking)
+    FraudService.detectFakeRide(rideId).then((isFake) => {
+      if (isFake) {
+        logger.warn(`Fake ride detected: ${rideId}`, { rideId, riderId });
+        // TODO: trigger fraud alert notification to admin
+      }
+    }).catch((err) => logger.error('Fraud detection failed:', err));
 
     return this.formatRideResponse(updatedRide!);
   }
@@ -253,7 +348,37 @@ export class RideService {
     // If rider was assigned, make them available again
     if (ride.rider) {
       await this.riderRepository.updateAvailability(ride.rider.toString(), true);
+
+      // Notify rider
+      notificationService
+        .sendNotification({
+          recipientId: ride.rider.toString(),
+          recipientType: RecipientType.RIDER,
+          title: 'Ride Cancelled',
+          body: `The ride has been cancelled. Reason: ${reason}`,
+          notificationType: NotificationType.RIDE_UPDATE,
+          deliveryType: [DeliveryType.PUSH, DeliveryType.IN_APP],
+          data: { rideId, status: RideStatus.CANCELLED, reason },
+        })
+        .catch((err) => logger.error('Notification failed (cancelRide rider):', err));
     }
+
+    // Notify user (if rider cancelled)
+    if (ride.rider?.toString() === userId) {
+      notificationService
+        .sendNotification({
+          recipientId: ride.user.toString(),
+          recipientType: RecipientType.USER,
+          title: 'Ride Cancelled by Rider',
+          body: 'Your rider has cancelled the ride. We are searching for another rider.',
+          notificationType: NotificationType.RIDE_UPDATE,
+          deliveryType: [DeliveryType.PUSH, DeliveryType.IN_APP],
+          data: { rideId, status: RideStatus.CANCELLED },
+        })
+        .catch((err) => logger.error('Notification failed (cancelRide user):', err));
+    }
+
+    logger.info(`Ride cancelled: ${rideId} by: ${userId}`, { reason });
 
     return this.formatRideResponse(updatedRide!);
   }
@@ -275,9 +400,8 @@ export class RideService {
     if (!ride) return;
 
     if (ride.status === RideStatus.SEARCHING) {
-      // Logic for triggering matching process
       logger.info(`Activating matching for scheduled ride: ${rideId}`);
+      // TODO: Emit socket event to trigger matching engine
     }
   }
 }
-

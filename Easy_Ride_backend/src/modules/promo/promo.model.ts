@@ -1,6 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { IPromoDocument } from './promo.interface';
-import { PromoType, DiscountType, VehicleType } from '../../shared/enums';
+import { PromoType, DiscountType, VehicleType, PromoStatus } from '../../shared/enums';
 
 const promoSchema = new Schema<IPromoDocument>(
   {
@@ -67,6 +67,16 @@ const promoSchema = new Schema<IPromoDocument>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    promoStatus: {
+      type: String,
+      enum: Object.values(PromoStatus),
+      default: PromoStatus.ACTIVE,
+      index: true,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User', // Admin who created the promo
     },
     metadata: {
       type: Schema.Types.Mixed,

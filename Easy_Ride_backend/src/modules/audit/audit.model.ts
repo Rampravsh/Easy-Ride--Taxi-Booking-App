@@ -6,7 +6,7 @@ const auditSchema = new Schema<IAuditDocument>(
   {
     admin: {
       type: Schema.Types.ObjectId,
-      ref: 'Admin',
+      ref: 'User',  // Admins are stored in the User collection — no separate Admin model
       required: true,
       index: true,
     },

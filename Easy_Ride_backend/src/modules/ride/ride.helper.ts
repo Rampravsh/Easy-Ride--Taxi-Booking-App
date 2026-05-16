@@ -1,4 +1,4 @@
-import { RIDE_CONSTANTS, ALLOWED_STATUS_TRANSITIONS } from './ride.constants';
+import { RIDE_CONSTANTS, ALLOWED_RIDE_TRANSITIONS } from './ride.constants';
 import { RideStatus } from '../../shared/enums';
 
 export class RideHelper {
@@ -41,7 +41,7 @@ export class RideHelper {
    * Validate status transition
    */
   static isValidTransition(currentStatus: RideStatus, nextStatus: RideStatus): boolean {
-    const allowed = ALLOWED_STATUS_TRANSITIONS[currentStatus];
+    const allowed = ALLOWED_RIDE_TRANSITIONS[currentStatus];
     return allowed ? allowed.includes(nextStatus) : false;
   }
 }
