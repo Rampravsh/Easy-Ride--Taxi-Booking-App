@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './slices/authSlice';
 
 export const store = configureStore({
   reducer: {
-    // Add your reducers here as you create slices
+    auth: authReducer,
   },
-  // Middleware configuration for RTK Query can be added here later
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
