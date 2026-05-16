@@ -9,8 +9,9 @@ export const Onboarding3Screen = () => {
 
   return (
     <OnboardingLayout
+      image={require('../../../assets/images/onboarding_safety.png')}
       title="Safety & Support"
-      description="24/7 support and secure driving experience for every partner."
+      description="Enjoy peace of mind with 24/7 in-app support and real-time safety monitoring."
       onNext={() => navigation.navigate('Welcome')}
       onSkip={() => navigation.navigate('Welcome')}
       isLast={true}

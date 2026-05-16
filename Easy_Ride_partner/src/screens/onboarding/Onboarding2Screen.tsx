@@ -9,8 +9,9 @@ export const Onboarding2Screen = () => {
 
   return (
     <OnboardingLayout
+      image={require('../../../assets/images/onboarding_navigation.png')}
       title="Smart Navigation"
-      description="Optimized routes to save time and maximize your trips."
+      description="Optimized routes and real-time traffic updates to save your time and fuel."
       onNext={() => navigation.navigate('Onboarding3')}
       onSkip={() => navigation.navigate('Welcome')}
       isLast={false}

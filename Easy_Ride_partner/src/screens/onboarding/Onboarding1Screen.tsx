@@ -9,8 +9,9 @@ export const Onboarding1Screen = () => {
 
   return (
     <OnboardingLayout
+      image={require('../../../assets/images/onboarding_earnings.png')}
       title="Earn on your terms"
-      description="Flexible hours and competitive earnings with every ride."
+      description="Flexible hours and competitive earnings with every ride you complete."
       onNext={() => navigation.navigate('Onboarding2')}
       onSkip={() => navigation.navigate('Welcome')}
       isLast={false}
