@@ -29,7 +29,7 @@ export const SplashScreen = () => {
     ]).start();
 
     const timer = setTimeout(() => {
-      navigation.replace('Welcome');
+      navigation.replace('Onboarding1');
     }, 2500);
 
     return () => clearTimeout(timer);

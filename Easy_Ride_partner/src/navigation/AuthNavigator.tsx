@@ -5,7 +5,9 @@ import { View, Text } from 'react-native';
 
 // Import Screens
 import { SplashScreen } from '../screens/auth/SplashScreen';
-
+import { Onboarding1Screen } from '../screens/onboarding/Onboarding1Screen';
+import { Onboarding2Screen } from '../screens/onboarding/Onboarding2Screen';
+import { Onboarding3Screen } from '../screens/onboarding/Onboarding3Screen';
 // Placeholder screens
 const PlaceholderScreen = ({ name }: { name: string }) => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -22,6 +24,9 @@ export const AuthNavigator = () => {
       screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="Onboarding1" component={Onboarding1Screen} />
+      <Stack.Screen name="Onboarding2" component={Onboarding2Screen} />
+      <Stack.Screen name="Onboarding3" component={Onboarding3Screen} />
       <Stack.Screen name="Welcome" component={() => <PlaceholderScreen name="Welcome" />} />
       <Stack.Screen name="SignIn" component={() => <PlaceholderScreen name="SignIn" />} />
       <Stack.Screen name="SignUp" component={() => <PlaceholderScreen name="SignUp" />} />
