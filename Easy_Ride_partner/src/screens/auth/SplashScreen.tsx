@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated, Dimensions, Image } from 'react-native';
 import { useTheme } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,7 +10,7 @@ const { width } = Dimensions.get('window');
 export const SplashScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
-  
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -37,15 +37,17 @@ export const SplashScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
-      <Animated.View style={{ 
-        opacity: fadeAnim, 
+      <Animated.View style={{
+        opacity: fadeAnim,
         transform: [{ scale: scaleAnim }],
-        alignItems: 'center' 
+        alignItems: 'center'
       }}>
-        <View style={[styles.logoPlaceholder, { backgroundColor: theme.colors.secondary }]}>
-           <Text style={[styles.logoText, { color: theme.colors.primary }]}>ER</Text>
-        </View>
-        
+        <Image
+          source={require('../../../assets/images/logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+
         <Text style={[styles.appName, { color: theme.colors.secondary }]}>
           EASY RIDE
         </Text>
@@ -69,22 +71,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+  logo: {
+    width: 120,
+    height: 120,
     marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  logoText: {
-    fontSize: 40,
-    fontWeight: '900',
   },
   appName: {
     fontSize: 36,

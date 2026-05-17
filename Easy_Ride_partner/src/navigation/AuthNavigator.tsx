@@ -1,19 +1,22 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthStackParamList } from './types';
-import { View, Text } from 'react-native';
 
 // Import Screens
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { Onboarding1Screen } from '../screens/onboarding/Onboarding1Screen';
 import { Onboarding2Screen } from '../screens/onboarding/Onboarding2Screen';
 import { Onboarding3Screen } from '../screens/onboarding/Onboarding3Screen';
-// Placeholder screens
-const PlaceholderScreen = ({ name }: { name: string }) => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text>{name} Screen</Text>
-  </View>
-);
+import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
+import { PhoneLoginScreen } from '../screens/auth/PhoneLoginScreen';
+import { OtpVerificationScreen } from '../screens/auth/OtpVerificationScreen';
+import { GoogleLoginScreen } from '../screens/auth/GoogleLoginScreen';
+import { RiderRegistrationScreen } from '../screens/auth/RiderRegistrationScreen';
+import { VehicleRegistrationScreen } from '../screens/auth/VehicleRegistrationScreen';
+import { DocumentUploadScreen } from '../screens/auth/DocumentUploadScreen';
+import { ApprovalPendingScreen } from '../screens/auth/ApprovalPendingScreen';
+import { RejectedVerificationScreen } from '../screens/auth/RejectedVerificationScreen';
+import { AccountApprovedScreen } from '../screens/auth/AccountApprovedScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -27,9 +30,21 @@ export const AuthNavigator = () => {
       <Stack.Screen name="Onboarding1" component={Onboarding1Screen} />
       <Stack.Screen name="Onboarding2" component={Onboarding2Screen} />
       <Stack.Screen name="Onboarding3" component={Onboarding3Screen} />
-      <Stack.Screen name="Welcome" component={() => <PlaceholderScreen name="Welcome" />} />
-      <Stack.Screen name="SignIn" component={() => <PlaceholderScreen name="SignIn" />} />
-      <Stack.Screen name="SignUp" component={() => <PlaceholderScreen name="SignUp" />} />
+      <Stack.Screen name="Welcome" component={WelcomeScreen} />
+      
+      {/* Phone Login is the entry for SignIn/SignUp */}
+      <Stack.Screen name="PhoneLogin" component={PhoneLoginScreen} />
+      <Stack.Screen name="SignIn" component={PhoneLoginScreen} />
+      <Stack.Screen name="SignUp" component={RiderRegistrationScreen} />
+      
+      <Stack.Screen name="OtpVerification" component={OtpVerificationScreen} />
+      <Stack.Screen name="GoogleLogin" component={GoogleLoginScreen} />
+      <Stack.Screen name="RiderRegistration" component={RiderRegistrationScreen} />
+      <Stack.Screen name="VehicleRegistration" component={VehicleRegistrationScreen} />
+      <Stack.Screen name="DocumentUpload" component={DocumentUploadScreen} />
+      <Stack.Screen name="ApprovalPending" component={ApprovalPendingScreen} />
+      <Stack.Screen name="RejectedVerification" component={RejectedVerificationScreen} />
+      <Stack.Screen name="AccountApproved" component={AccountApprovedScreen} />
     </Stack.Navigator>
   );
 };

@@ -11,13 +11,21 @@ export type AuthStackParamList = {
   Welcome: undefined;
   SignIn: undefined;
   SignUp: undefined;
+  PhoneLogin: undefined;
+  GoogleLogin: undefined;
   OtpVerification: {
     type: 'phone' | 'email';
     value: string;
     nextScreen: keyof AuthStackParamList;
   };
-  CompleteProfile: undefined;
-  ForgotPassword: undefined;
+  RiderRegistration: undefined;
+  VehicleRegistration: undefined;
+  DocumentUpload: undefined;
+  ApprovalPending: undefined;
+  RejectedVerification: {
+    reasons: string[];
+  } | undefined;
+  AccountApproved: undefined;
 };
 
 export type MainStackParamList = {
