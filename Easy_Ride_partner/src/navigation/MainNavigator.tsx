@@ -2,7 +2,6 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainStackParamList, TabParamList } from './types';
-import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme';
 
@@ -16,14 +15,15 @@ import { RideCompletedScreen } from '../screens/main/rides/RideCompletedScreen';
 import { RideDetailsScreen } from '../screens/main/rides/RideDetailsScreen';
 import { WalletScreen } from '../screens/main/wallet/WalletScreen';
 
-const PlaceholderScreen = ({ name }: { name: string }) => {
-  const { theme } = useTheme();
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
-      <Text style={{ color: theme.colors.text }}>{name} Screen</Text>
-    </View>
-  );
-};
+// Newly Created Communication, Safety & Support Screens
+import { ChatScreen } from '../screens/main/chat/ChatScreen';
+import { CallingScreen } from '../screens/main/call/CallingScreen';
+import { NotificationScreen } from '../screens/main/notifications/NotificationScreen';
+import { SafetyCenterScreen } from '../screens/main/safety/SafetyCenterScreen';
+import { IncidentReportScreen } from '../screens/main/safety/IncidentReportScreen';
+import { SupportScreen } from '../screens/main/support/SupportScreen';
+import { ProfileScreen } from '../screens/main/profile/ProfileScreen';
+import { DocumentsScreen } from '../screens/main/profile/DocumentsScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -51,6 +51,8 @@ const TabNavigator = () => {
           } else if (route.name === 'Rides') {
             iconName = 'car';
           } else if (route.name === 'Earnings') {
+            iconName = 'cash';
+          } else if (route.name === 'Wallet') {
             iconName = 'wallet';
           } else if (route.name === 'Profile') {
             iconName = 'person';
@@ -62,7 +64,8 @@ const TabNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Rides" component={RideDetailsScreen} />
       <Tab.Screen name="Earnings" component={EarningsDashboardScreen} />
-      <Tab.Screen name="Profile" component={() => <PlaceholderScreen name="Profile" />} />
+      <Tab.Screen name="Wallet" component={WalletScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };
@@ -77,6 +80,15 @@ export const MainNavigator = () => {
       <Stack.Screen name="RideInProgress" component={RideInProgressScreen} />
       <Stack.Screen name="RideCompleted" component={RideCompletedScreen} />
       <Stack.Screen name="Wallet" component={WalletScreen} />
+      
+      {/* Communication, Safety, & Support Stack Registry */}
+      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="Calling" component={CallingScreen} />
+      <Stack.Screen name="Notifications" component={NotificationScreen} />
+      <Stack.Screen name="SafetyCenter" component={SafetyCenterScreen} />
+      <Stack.Screen name="IncidentReport" component={IncidentReportScreen} />
+      <Stack.Screen name="Support" component={SupportScreen} />
+      <Stack.Screen name="Documents" component={DocumentsScreen} />
     </Stack.Navigator>
   );
 };

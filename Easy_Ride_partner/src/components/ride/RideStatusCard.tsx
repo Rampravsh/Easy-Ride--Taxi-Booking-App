@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    justify('center') as any || 'center',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   riderDetails: {

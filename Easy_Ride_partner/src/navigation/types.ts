@@ -43,11 +43,16 @@ export type MainStackParamList = {
   Chat: { rideId: string };
   Support: undefined;
   Notifications: undefined;
+  Calling: undefined;
+  SafetyCenter: undefined;
+  IncidentReport: undefined;
+  Documents: undefined;
 };
 
 export type TabParamList = {
   Home: undefined;
   Rides: undefined;
   Earnings: undefined;
+  Wallet: undefined;
   Profile: undefined;
 };

@@ -32,7 +32,7 @@ export const WalletScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
+      <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
       {/* Screen Header */}
       <SafeAreaView style={[styles.header, { borderBottomColor: theme.colors.border }]} edges={['top']}>

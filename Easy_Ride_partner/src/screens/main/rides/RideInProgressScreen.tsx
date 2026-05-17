@@ -66,7 +66,7 @@ export const RideInProgressScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
+      <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
       {/* Socket Connection Alert Banner */}
       <SocketConnectionBanner status="connected" />

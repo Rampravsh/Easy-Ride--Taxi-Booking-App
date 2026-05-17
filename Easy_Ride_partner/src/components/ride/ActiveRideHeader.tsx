@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../theme';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface ActiveRideHeaderProps {
   tripStatus: 'pickup' | 'inprogress' | 'completed';
@@ -41,26 +42,31 @@ export const ActiveRideHeader = ({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border }]}>
-      <View style={styles.headerRow}>
-        {onBackPress && (
-          <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-        )}
-        <View style={styles.titleContainer}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
-            <Text style={[styles.statusText, { color: getStatusColor() }]}>{getStatusText()}</Text>
+    <SafeAreaView 
+      style={{ backgroundColor: theme.colors.card }} 
+      edges={['top']}
+    >
+      <View style={[styles.container, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border }]}>
+        <View style={styles.headerRow}>
+          {onBackPress && (
+            <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.titleContainer}>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
+              <Text style={[styles.statusText, { color: getStatusColor() }]}>{getStatusText()}</Text>
+            </View>
+            <Text style={[styles.subTitle, { color: theme.colors.textSecondary }]}>
+              {eta} • {distance} remaining
+            </Text>
           </View>
-          <Text style={[styles.subTitle, { color: theme.colors.textSecondary }]}>
-            {eta} • {distance} remaining
-          </Text>
+          <TouchableOpacity style={[styles.safetyButton, { backgroundColor: theme.colors.danger + '15' }]}>
+            <Ionicons name="shield-checkmark" size={22} color={theme.colors.danger} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={[styles.safetyButton, { backgroundColor: theme.colors.danger + '15' }]}>
-          <Ionicons name="shield-checkmark" size={22} color={theme.colors.danger} />
-        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

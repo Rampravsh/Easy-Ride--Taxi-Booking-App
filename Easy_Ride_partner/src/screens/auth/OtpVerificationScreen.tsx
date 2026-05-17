@@ -33,7 +33,7 @@ export const OtpVerificationScreen = () => {
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (timer > 0) {
       interval = setInterval(() => {
         setTimer((prev) => prev - 1);
@@ -108,7 +108,7 @@ export const OtpVerificationScreen = () => {
             {otp.map((digit, idx) => (
               <TextInput
                 key={idx}
-                ref={(ref) => (inputRefs.current[idx] = ref)}
+                ref={(ref) => { inputRefs.current[idx] = ref; }}
                 style={[
                   styles.otpInput,
                   { 
