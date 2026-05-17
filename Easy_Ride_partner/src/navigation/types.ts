@@ -30,9 +30,12 @@ export type AuthStackParamList = {
 
 export type MainStackParamList = {
   HomeTabs: undefined;
-  RideDetails: { rideId: string };
+  RideDetails: { rideId?: string } | undefined;
   RideRequest: { rideId: string };
   IncomingRide: undefined;
+  NavigateToPickup: undefined;
+  RideInProgress: undefined;
+  RideCompleted: undefined;
   Earnings: undefined;
   Wallet: undefined;
   Profile: undefined;

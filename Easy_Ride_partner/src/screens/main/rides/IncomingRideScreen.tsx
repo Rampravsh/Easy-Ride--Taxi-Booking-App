@@ -20,7 +20,7 @@ const { width } = Dimensions.get('window');
 
 export const IncomingRideScreen = () => {
   const { theme } = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [countdown, setCountdown] = useState(15);
   
   // Animation Values
@@ -107,7 +107,7 @@ export const IncomingRideScreen = () => {
           duration="48 mins" 
           fareEstimate="₹820.00" 
           surgeMultiplier={1.6} 
-          onAccept={() => navigation.goBack()} 
+          onAccept={() => navigation.navigate('NavigateToPickup' as any)} 
           onDecline={() => navigation.goBack()} 
         />
       </View>

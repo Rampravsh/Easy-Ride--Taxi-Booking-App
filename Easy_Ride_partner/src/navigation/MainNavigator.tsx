@@ -10,6 +10,11 @@ import { useTheme } from '../theme';
 import { HomeScreen } from '../screens/main/home/HomeScreen';
 import { IncomingRideScreen } from '../screens/main/rides/IncomingRideScreen';
 import { EarningsDashboardScreen } from '../screens/main/earnings/EarningsDashboardScreen';
+import { NavigateToPickupScreen } from '../screens/main/rides/NavigateToPickupScreen';
+import { RideInProgressScreen } from '../screens/main/rides/RideInProgressScreen';
+import { RideCompletedScreen } from '../screens/main/rides/RideCompletedScreen';
+import { RideDetailsScreen } from '../screens/main/rides/RideDetailsScreen';
+import { WalletScreen } from '../screens/main/wallet/WalletScreen';
 
 const PlaceholderScreen = ({ name }: { name: string }) => {
   const { theme } = useTheme();
@@ -55,7 +60,7 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Rides" component={() => <PlaceholderScreen name="Rides" />} />
+      <Tab.Screen name="Rides" component={RideDetailsScreen} />
       <Tab.Screen name="Earnings" component={EarningsDashboardScreen} />
       <Tab.Screen name="Profile" component={() => <PlaceholderScreen name="Profile" />} />
     </Tab.Navigator>
@@ -66,8 +71,14 @@ export const MainNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeTabs" component={TabNavigator} />
-      <Stack.Screen name="RideDetails" component={() => <PlaceholderScreen name="RideDetails" />} />
+      <Stack.Screen name="RideDetails" component={RideDetailsScreen} />
       <Stack.Screen name="IncomingRide" component={IncomingRideScreen} />
+      <Stack.Screen name="NavigateToPickup" component={NavigateToPickupScreen} />
+      <Stack.Screen name="RideInProgress" component={RideInProgressScreen} />
+      <Stack.Screen name="RideCompleted" component={RideCompletedScreen} />
+      <Stack.Screen name="Wallet" component={WalletScreen} />
     </Stack.Navigator>
   );
 };
+
+export default MainNavigator;
