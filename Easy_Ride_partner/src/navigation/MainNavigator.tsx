@@ -25,6 +25,14 @@ import { SupportScreen } from '../screens/main/support/SupportScreen';
 import { ProfileScreen } from '../screens/main/profile/ProfileScreen';
 import { DocumentsScreen } from '../screens/main/profile/DocumentsScreen';
 
+// Newly Created Menu & Settings Screens
+import { MenuScreen } from '../screens/main/menu/MenuScreen';
+import { SettingsScreen } from '../screens/main/settings/SettingsScreen';
+import { NotificationPreferencesScreen } from '../screens/main/settings/NotificationPreferencesScreen';
+import { AppPreferencesScreen } from '../screens/main/settings/AppPreferencesScreen';
+import { PrivacySecurityScreen } from '../screens/main/settings/PrivacySecurityScreen';
+import { LanguageScreen } from '../screens/main/settings/LanguageScreen';
+
 const Stack = createNativeStackNavigator<MainStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
@@ -89,6 +97,14 @@ export const MainNavigator = () => {
       <Stack.Screen name="IncidentReport" component={IncidentReportScreen} />
       <Stack.Screen name="Support" component={SupportScreen} />
       <Stack.Screen name="Documents" component={DocumentsScreen} />
+
+      {/* Menu & Settings Stack Registry */}
+      <Stack.Screen name="Menu" component={MenuScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
+      <Stack.Screen name="AppPreferences" component={AppPreferencesScreen} />
+      <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+      <Stack.Screen name="Language" component={LanguageScreen} />
     </Stack.Navigator>
   );
 };

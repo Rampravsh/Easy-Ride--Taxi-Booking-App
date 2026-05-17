@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Haptics from 'expo-haptics';
 
 // Reusable Components
 import { OnlineStatusBadge } from '../../../components/realtime/OnlineStatusBadge';
@@ -46,10 +47,33 @@ export const HomeScreen = () => {
   const [isOnline, setIsOnline] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<'excellent' | 'fair' | 'disconnected'>('excellent');
   const [isTrafficActive, setIsTrafficActive] = useState(false);
+  const [mapType, setMapType] = useState<'standard' | 'satellite'>('standard');
+
+  const mapRef = useRef<MapView>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   // Animations
   const statusAnim = useRef(new Animated.Value(0)).current; // 0 = Offline, 1 = Online
   const pulseScale = useRef(new Animated.Value(1)).current;
+
+  // Re-center map to Driver Marker
+  const reCenterMap = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const targetLat = userLocation?.latitude || 12.9716;
+    const targetLng = userLocation?.longitude || 77.5946;
+    mapRef.current?.animateToRegion({
+      latitude: targetLat,
+      longitude: targetLng,
+      latitudeDelta: 0.015,
+      longitudeDelta: 0.015,
+    }, 1000);
+  };
+
+  // Toggle Satellite vs Standard Layers
+  const toggleMapType = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setMapType(mapType === 'standard' ? 'satellite' : 'standard');
+  };
 
   // Toggle Online/Offline State
   const toggleOnlineStatus = () => {
@@ -99,6 +123,7 @@ export const HomeScreen = () => {
 
       {/* Premium Interactive Map View Component */}
       <MapView
+        ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={{
@@ -107,10 +132,26 @@ export const HomeScreen = () => {
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
         }}
-        customMapStyle={theme.isDark ? darkMapStyle : []}
+        mapType={mapType}
+        showsTraffic={isTrafficActive}
+        showsUserLocation={true}
+        showsMyLocationButton={false}
+        onUserLocationChange={(event) => {
+          const { coordinate } = event.nativeEvent;
+          if (coordinate) {
+            setUserLocation({
+              latitude: coordinate.latitude,
+              longitude: coordinate.longitude,
+            });
+          }
+        }}
+        customMapStyle={theme.isDark && mapType === 'standard' ? darkMapStyle : []}
       >
         {/* Dynamic Live Driver Pulse Pin */}
-        <Marker coordinate={{ latitude: 12.9716, longitude: 77.5946 }}>
+        <Marker coordinate={{ 
+          latitude: userLocation?.latitude || 12.9716, 
+          longitude: userLocation?.longitude || 77.5946 
+        }}>
           <Animated.View style={[
             styles.driverPinContainer,
             { transform: [{ scale: pulseScale }] }
@@ -136,7 +177,9 @@ export const HomeScreen = () => {
         <View style={styles.headerRow}>
           <TouchableOpacity 
             style={[styles.menuBtn, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
-            onPress={() => {}}
+            onPress={() => {
+              navigation.navigate('Menu');
+            }}
           >
             <Ionicons name="menu" size={24} color={theme.colors.text} />
           </TouchableOpacity>
@@ -153,9 +196,11 @@ export const HomeScreen = () => {
       <MapOverlayControls 
         isTrafficActive={isTrafficActive}
         onPressTraffic={() => setIsTrafficActive(!isTrafficActive)}
+        onPressCompass={reCenterMap}
+        onPressLayer={toggleMapType}
       />
 
-      <CurrentLocationButton onPress={() => {}} bottomOffset={isOnline ? 380 : 310} />
+      <CurrentLocationButton onPress={reCenterMap} bottomOffset={isOnline ? 380 : 310} />
 
       {/* Interactive Bottom Sheet Operational Panel */}
       <MapBottomSheet height={isOnline ? height * 0.44 : height * 0.35}>

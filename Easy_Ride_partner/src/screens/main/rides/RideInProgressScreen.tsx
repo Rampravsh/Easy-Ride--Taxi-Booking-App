@@ -161,8 +161,8 @@ export const RideInProgressScreen = () => {
         <PassengerInfoCard 
           passengerName="Ramprakash S." 
           rating={4.9} 
-          onCallPress={() => {}} 
-          onChatPress={() => {}} 
+          onCallPress={() => navigation.navigate('Calling')} 
+          onChatPress={() => navigation.navigate('Chat', { rideId: 'ER-9828' })} 
         />
 
         <View style={{ height: 12 }} />

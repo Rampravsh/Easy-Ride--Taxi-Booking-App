@@ -1,25 +1,64 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   StatusBar, 
   ScrollView, 
-  TouchableOpacity 
+  TouchableOpacity,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 
 // Reusable Components
 import { EarningsCard } from '../../../components/earnings/EarningsCard';
 import { IncentiveCard } from '../../../components/earnings/IncentiveCard';
 import { TripSummaryCard } from '../../../components/earnings/TripSummaryCard';
+import { CalendarFilterModal } from '../../../components/earnings/CalendarFilterModal';
 
 export const EarningsDashboardScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
+
+  // Dynamic Shift Weeks States
+  const [modalVisible, setModalVisible] = useState(false);
+  const [weekRange, setWeekRange] = useState('May 10 - May 16');
+  const [totalEarnings, setTotalEarnings] = useState('₹18,420');
+  const [todayEarnings, setTodayEarnings] = useState('₹4,850.75');
+  const [tripsCount, setTripsCount] = useState(34);
+  const [barHeights, setBarHeights] = useState({
+    mon: '60%',
+    tue: '80%',
+    wed: '45%',
+    thu: '95%',
+    fri: '70%',
+    sat: '100%',
+    sun: '30%'
+  });
+
+  const handleCalendarPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setModalVisible(true);
+  };
+
+  const handleSelectRange = (
+    type: 'current' | 'previous',
+    label: string,
+    earnings: string,
+    today: string,
+    trips: number,
+    bars: { mon: string; tue: string; wed: string; thu: string; fri: string; sat: string; sun: string }
+  ) => {
+    setWeekRange(label);
+    setTotalEarnings(earnings);
+    setTodayEarnings(today);
+    setTripsCount(trips);
+    setBarHeights(bars);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -28,11 +67,13 @@ export const EarningsDashboardScreen = () => {
       {/* Screen Header */}
       <SafeAreaView style={[styles.header, { borderBottomColor: theme.colors.border }]} edges={['top']}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Earnings Dashboard</Text>
-          <TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.bold }]}>
+            Earnings Dashboard
+          </Text>
+          <TouchableOpacity onPress={handleCalendarPress} activeOpacity={0.7}>
             <Ionicons name="calendar-outline" size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -41,55 +82,55 @@ export const EarningsDashboardScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Core Earnings Summary */}
         <EarningsCard 
-          todayEarnings="₹4,850.75" 
+          todayEarnings={todayEarnings} 
           onlineHours="38h 15m" 
-          tripsCount={34} 
+          tripsCount={tripsCount} 
           acceptanceRate="96%" 
         />
 
         {/* Dynamic Premium Analytics Graph Placeholder */}
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>WEEKLY OVERVIEW</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.bold }]}>WEEKLY OVERVIEW</Text>
         <View style={[styles.chartContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <View style={styles.chartHeader}>
-            <Text style={[styles.chartTitle, { color: theme.colors.textSecondary }]}>May 10 - May 16</Text>
-            <Text style={[styles.chartTotal, { color: theme.colors.text }]}>₹18,420</Text>
+            <Text style={[styles.chartTitle, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily.semiBold }]}>{weekRange}</Text>
+            <Text style={[styles.chartTotal, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.bold }]}>{totalEarnings}</Text>
           </View>
 
           {/* SVG Styled Bar Graph */}
           <View style={styles.chartVisual}>
             <View style={styles.barCol}>
-              <View style={[styles.barFill, { height: '60%', backgroundColor: theme.colors.primary }]} />
-              <Text style={[styles.barLabel, { color: theme.colors.textSecondary }]}>M</Text>
+              <View style={[styles.barFill, { height: barHeights.mon as any, backgroundColor: theme.colors.primary }]} />
+              <Text style={[styles.barLabel, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily.medium }]}>M</Text>
             </View>
             <View style={styles.barCol}>
-              <View style={[styles.barFill, { height: '80%', backgroundColor: theme.colors.primary }]} />
-              <Text style={[styles.barLabel, { color: theme.colors.textSecondary }]}>T</Text>
+              <View style={[styles.barFill, { height: barHeights.tue as any, backgroundColor: theme.colors.primary }]} />
+              <Text style={[styles.barLabel, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily.medium }]}>T</Text>
             </View>
             <View style={styles.barCol}>
-              <View style={[styles.barFill, { height: '45%', backgroundColor: theme.colors.primary }]} />
-              <Text style={[styles.barLabel, { color: theme.colors.textSecondary }]}>W</Text>
+              <View style={[styles.barFill, { height: barHeights.wed as any, backgroundColor: theme.colors.primary }]} />
+              <Text style={[styles.barLabel, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily.medium }]}>W</Text>
             </View>
             <View style={styles.barCol}>
-              <View style={[styles.barFill, { height: '95%', backgroundColor: theme.colors.primary }]} />
-              <Text style={[styles.barLabel, { color: theme.colors.textSecondary }]}>T</Text>
+              <View style={[styles.barFill, { height: barHeights.thu as any, backgroundColor: theme.colors.primary }]} />
+              <Text style={[styles.barLabel, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily.medium }]}>T</Text>
             </View>
             <View style={styles.barCol}>
-              <View style={[styles.barFill, { height: '70%', backgroundColor: theme.colors.primary }]} />
-              <Text style={[styles.barLabel, { color: theme.colors.textSecondary }]}>F</Text>
+              <View style={[styles.barFill, { height: barHeights.fri as any, backgroundColor: theme.colors.primary }]} />
+              <Text style={[styles.barLabel, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily.medium }]}>F</Text>
             </View>
             <View style={styles.barCol}>
-              <View style={[styles.barFill, { height: '100%', backgroundColor: theme.colors.primary }]} />
-              <Text style={[styles.barLabel, { color: theme.colors.textSecondary }]}>S</Text>
+              <View style={[styles.barFill, { height: barHeights.sat as any, backgroundColor: theme.colors.primary }]} />
+              <Text style={[styles.barLabel, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily.medium }]}>S</Text>
             </View>
             <View style={styles.barCol}>
-              <View style={[styles.barFill, { height: '30%', backgroundColor: theme.colors.primary }]} />
-              <Text style={[styles.barLabel, { color: theme.colors.textSecondary }]}>S</Text>
+              <View style={[styles.barFill, { height: barHeights.sun as any, backgroundColor: theme.colors.primary }]} />
+              <Text style={[styles.barLabel, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily.medium }]}>S</Text>
             </View>
           </View>
         </View>
 
         {/* Incentives Targets Section */}
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>ACTIVE INCENTIVES</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.bold }]}>ACTIVE INCENTIVES</Text>
         <IncentiveCard 
           title="Weekend Rush Hour Bonus" 
           description="Complete 10 rides between 5 PM and 9 PM on Saturday/Sunday." 
@@ -129,6 +170,13 @@ export const EarningsDashboardScreen = () => {
           paymentMode="WALLET" 
         />
       </ScrollView>
+
+      <CalendarFilterModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        selectedRange={weekRange}
+        onSelectRange={handleSelectRange}
+      />
     </View>
   );
 };

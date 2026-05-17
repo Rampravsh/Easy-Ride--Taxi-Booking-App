@@ -121,6 +121,8 @@ export const NavigateToPickupScreen = () => {
           passengerName="Ramprakash S." 
           onArrivedPress={handleArrived} 
           isArrived={isArrived} 
+          onChatPress={() => navigation.navigate('Chat', { rideId: 'ER-9828' })}
+          onCallPress={() => navigation.navigate('Calling')}
         />
       </View>
     </View>

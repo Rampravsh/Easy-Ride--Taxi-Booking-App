@@ -8,6 +8,8 @@ interface PickupInfoCardProps {
   passengerName: string;
   onArrivedPress?: () => void;
   isArrived: boolean;
+  onChatPress?: () => void;
+  onCallPress?: () => void;
 }
 
 export const PickupInfoCard = ({
@@ -15,6 +17,8 @@ export const PickupInfoCard = ({
   passengerName,
   onArrivedPress,
   isArrived,
+  onChatPress,
+  onCallPress,
 }: PickupInfoCardProps) => {
   const { theme } = useTheme();
 
@@ -40,6 +44,29 @@ export const PickupInfoCard = ({
         <View style={styles.passengerInfo}>
           <Text style={[styles.passengerNameText, { color: theme.colors.text }]}>{passengerName}</Text>
           <Text style={[styles.passengerStatus, { color: theme.colors.textSecondary }]}>Rider is waiting at pickup</Text>
+        </View>
+
+        {/* Real communication action buttons */}
+        <View style={styles.actionButtonsContainer}>
+          {onChatPress && (
+            <TouchableOpacity 
+              style={[styles.contactCircleBtn, { backgroundColor: 'rgba(76,175,80,0.1)' }]} 
+              onPress={onChatPress}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chatbubble" size={18} color={theme.colors.success} />
+            </TouchableOpacity>
+          )}
+
+          {onCallPress && (
+            <TouchableOpacity 
+              style={[styles.contactCircleBtn, { backgroundColor: 'rgba(245,184,0,0.1)' }]} 
+              onPress={onCallPress}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="call" size={18} color={theme.colors.primary} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -156,6 +183,18 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#111111',
     letterSpacing: 0.5,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  contactCircleBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 export default PickupInfoCard;

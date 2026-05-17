@@ -92,6 +92,45 @@ export const ProfileScreen: React.FC = () => {
           <TouchableOpacity
             style={[styles.menuItem, { borderBottomColor: theme.colors.border }]}
             onPress={() => {
+              navigation.navigate('Menu');
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuLeft}>
+              <View style={[styles.menuIconBg, { backgroundColor: 'rgba(245,184,0,0.15)' }]}>
+                <Ionicons name="apps" size={20} color={theme.colors.primary} />
+              </View>
+              <Text style={[styles.menuText, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.bold }]}>
+                Operational Control Center (Menu)
+              </Text>
+            </View>
+            <View style={styles.menuRight}>
+              <View style={[styles.greenDot, { backgroundColor: theme.colors.success }]} />
+              <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.menuItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() => {
+              navigation.navigate('Settings');
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuLeft}>
+              <View style={[styles.menuIconBg, { backgroundColor: 'rgba(0,122,255,0.1)' }]}>
+                <Ionicons name="settings" size={20} color="#007AFF" />
+              </View>
+              <Text style={[styles.menuText, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.medium }]}>
+                System Settings & Preferences
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.menuItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() => {
               navigation.navigate('Documents');
             }}
             activeOpacity={0.7}
@@ -141,6 +180,47 @@ export const ProfileScreen: React.FC = () => {
               </View>
               <Text style={[styles.menuText, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.medium }]}>
                 Help, Disputes, & Support Hub
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+
+          {/* Realtime Simulation Controls */}
+          <Text style={[styles.sectionHeading, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.bold, paddingHorizontal: 16, marginTop: 24 }]}>
+            Realtime Simulation Shortcuts
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.menuItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() => {
+              navigation.navigate('Chat', { rideId: 'ER-9828' });
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuLeft}>
+              <View style={[styles.menuIconBg, { backgroundColor: 'rgba(76,175,80,0.1)' }]}>
+                <Ionicons name="chatbubbles" size={20} color={theme.colors.success} />
+              </View>
+              <Text style={[styles.menuText, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.medium }]}>
+                Simulate Passenger Chat (Alex Mercer)
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.menuItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() => {
+              navigation.navigate('Calling');
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuLeft}>
+              <View style={[styles.menuIconBg, { backgroundColor: 'rgba(245,184,0,0.1)' }]}>
+                <Ionicons name="call" size={20} color={theme.colors.primary} />
+              </View>
+              <Text style={[styles.menuText, { color: theme.colors.text, fontFamily: theme.typography.fontFamily.medium }]}>
+                Simulate VoIP Call (Active Connection)
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />

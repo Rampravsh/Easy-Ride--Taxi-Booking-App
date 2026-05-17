@@ -29,7 +29,7 @@ export type AuthStackParamList = {
 };
 
 export type MainStackParamList = {
-  HomeTabs: undefined;
+  HomeTabs: { screen: keyof TabParamList } | undefined;
   RideDetails: { rideId?: string } | undefined;
   RideRequest: { rideId: string };
   IncomingRide: undefined;
@@ -40,6 +40,11 @@ export type MainStackParamList = {
   Wallet: undefined;
   Profile: undefined;
   Settings: undefined;
+  Menu: undefined;
+  NotificationPreferences: undefined;
+  AppPreferences: undefined;
+  PrivacySecurity: undefined;
+  Language: undefined;
   Chat: { rideId: string };
   Support: undefined;
   Notifications: undefined;
