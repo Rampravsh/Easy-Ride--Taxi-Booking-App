@@ -32,6 +32,7 @@ export type MainStackParamList = {
   HomeTabs: undefined;
   RideDetails: { rideId: string };
   RideRequest: { rideId: string };
+  IncomingRide: undefined;
   Earnings: undefined;
   Wallet: undefined;
   Profile: undefined;

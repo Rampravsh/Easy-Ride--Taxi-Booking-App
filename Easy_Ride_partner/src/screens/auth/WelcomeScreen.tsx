@@ -7,11 +7,16 @@ import { AuthStackParamList } from '../../navigation/types';
 import { useTheme } from '../../theme';
 import { AppButton } from '../../components/common/AppButton';
 
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '../../redux/slices/authSlice';
+import { TouchableOpacity } from 'react-native';
+
 const { width } = Dimensions.get('window');
 
 export const WelcomeScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList, 'Welcome'>>();
+  const dispatch = useDispatch();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -61,6 +66,20 @@ export const WelcomeScreen = () => {
             variant="outline"
             onPress={() => navigation.navigate('SignIn')}
           />
+          <TouchableOpacity 
+            onPress={() => {
+              dispatch(setCredentials({ 
+                token: 'mock-session-token', 
+                user: { name: 'John Doe', email: 'johndoe@example.com', role: 'partner' } 
+              }));
+            }}
+            style={{ marginTop: 16, alignItems: 'center' }}
+            activeOpacity={0.7}
+          >
+            <Text style={{ color: theme.colors.primary, fontWeight: '800', fontSize: 13, letterSpacing: 0.5 }}>
+              SKIP TO HOME (DEV MODE)
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
