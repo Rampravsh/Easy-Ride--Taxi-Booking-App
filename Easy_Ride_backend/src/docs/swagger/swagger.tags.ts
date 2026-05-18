@@ -19,4 +19,10 @@ export const SWAGGER_TAGS = {
   ADMIN: 'Admin',
   ANALYTICS: 'Analytics',
   SOCKET: 'Socket Events',
+  SYSTEM: 'System & Monitoring',
+  TRANSACTION: 'Transactions',
+  REVIEW: 'Reviews',
 } as const;
+
+
+

@@ -15,6 +15,20 @@ import './chat.docs';
 import './promo.docs';
 import './admin.docs';
 import './socket.docs';
+import './analytics.docs';
+import './call.docs';
+import './monitoring.docs';
+import './transaction.docs';
+import './pool.docs';
+import './review.docs';
+import './schedule.docs';
+
+
+
+
+
+
+
 
 // Note: Add other doc modules as they are created
 // import './rider.docs';

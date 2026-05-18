@@ -3,6 +3,8 @@ import { AnalyticsController } from './analytics.controller';
 import { protect } from '../../middlewares/auth.middleware';
 import { authorizeRoles, authorizeAdminScopes } from '../../middlewares/rbac.middleware';
 import { UserRole, AdminRole } from '../../shared/enums';
+import { validate } from '../../middlewares/validation.middleware';
+import { getRevenueSchema } from './analytics.validation';
 
 const router = Router();
 
@@ -36,7 +38,9 @@ router.get(
     AdminRole.ANALYTICS_ADMIN,
     AdminRole.FINANCE_ADMIN
   ),
+  validate(getRevenueSchema),
   AnalyticsController.getRevenue
 );
 
 export default router;
+
