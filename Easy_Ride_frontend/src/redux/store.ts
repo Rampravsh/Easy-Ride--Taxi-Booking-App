@@ -3,6 +3,7 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 import authReducer, { logoutThunk } from './slices/authSlice';
 import userReducer from './slices/userSlice';
 import notificationReducer from './slices/notificationSlice';
+import rideReducer from './slices/rideSlice';
 import { baseApi } from '../api/baseApi';
 import { registerUnauthorizedHandler } from '../api/axios';
 
@@ -15,6 +16,7 @@ export const store = configureStore({
     auth: authReducer,
     user: userReducer,
     notification: notificationReducer,
+    ride: rideReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>

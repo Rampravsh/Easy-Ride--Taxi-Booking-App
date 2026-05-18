@@ -1,9 +1,25 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  Image,
+  Dimensions,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme, spacing, radius } from '../../../theme';
+import { useTheme, spacing } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useDispatch, useSelector } from 'react-redux';
+import { setPickupLocation, setDestinationLocation } from '../../../redux/slices/rideSlice';
+import { RootState } from '../../../redux/store';
+import { LocationService } from '../../../services/location.service';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainStackParamList } from '../../../navigation/types';
 
 const { width } = Dimensions.get('window');
 
@@ -17,42 +33,78 @@ interface Place {
 
 const RECENT_PLACES: Place[] = [
   { id: '1', name: 'Office', address: '2972 Westheimer Rd. Santa Ana, Illinois 85486', distance: '2.7km', type: 'recent' },
-  { id: '2', name: 'coffee shop', address: '1901 Thornridge Cir. Shiloh, Hawaii 81063', distance: '1.5km', type: 'recent' },
+  { id: '2', name: 'Coffee shop', address: '1901 Thornridge Cir. Shiloh, Hawaii 81063', distance: '1.5km', type: 'recent' },
   { id: '3', name: 'Shopping center', address: '4517 Washington Ave. Manchester, Kentucky 39495', distance: '4.3km', type: 'recent' },
   { id: '4', name: 'Shopping mall', address: '4140 Parker Rd. Allentown, New Mexico 31134', distance: '4.8km', type: 'recent' },
 ];
 
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../../navigation/types';
-
 export const SearchScreen = () => {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const dispatch = useDispatch();
+  
+  const pickupLocation = useSelector((state: RootState) => state.ride.pickupLocation);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Place[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
     if (text.length > 0) {
       setHasSearched(true);
-      // Mock search results (Workaround: Always return results)
-      setResults([
+      // Return matching mocks based on search term
+      const mockResults: Place[] = [
         { id: '1', name: 'Burger Shop', address: '2972 Westheimer Rd. Santa Ana, Illinois 85486', distance: '2.7km', type: 'result' },
         { id: '2', name: 'Shopping mall', address: '4140 Parker Rd. Allentown, New Mexico 31134', distance: '4.0km', type: 'result' },
         { id: '3', name: 'Coffee Shop', address: '1901 Thornridge Cir. Shiloh, Hawaii 81063', distance: '1.1km', type: 'result' },
         { id: '4', name: 'Office', address: '4517 Washington Ave. Manchester, Kentucky 39495', distance: '3.2km', type: 'result' },
-      ]);
+      ];
+      setResults(mockResults.filter(place => place.name.toLowerCase().includes(text.toLowerCase()) || place.address.toLowerCase().includes(text.toLowerCase())));
     } else {
       setHasSearched(false);
       setResults([]);
     }
   };
 
+  const handleSelectPlace = async (place: Place) => {
+    setLoading(true);
+    try {
+      // 1. Geocode drop destination
+      const dropResult = await LocationService.geocodeAddress(place.address);
+      dispatch(
+        setDestinationLocation({
+          address: place.name ? `${place.name}, ${dropResult.address}` : dropResult.address,
+          coordinates: dropResult.coordinates,
+        })
+      );
+
+      // 2. Initialize pickup if not set
+      if (!pickupLocation) {
+        const pickupResult = await LocationService.geocodeAddress('Current location');
+        dispatch(
+          setPickupLocation({
+            address: 'Current Location (SF PACIFIC HEIGHTS)',
+            coordinates: pickupResult.coordinates,
+          })
+        );
+      }
+
+      // 3. Proceed to map confirmation
+      navigation.navigate('SelectLocation');
+    } catch (err) {
+      console.error('[SearchScreen] Selection error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderPlaceItem = ({ item }: { item: Place }) => (
     <TouchableOpacity 
       style={styles.placeItem}
-      onPress={() => navigation.navigate('SelectLocation' as any)}
+      onPress={() => handleSelectPlace(item)}
+      disabled={loading}
     >
       <View style={[styles.iconContainer, { backgroundColor: theme.colors.card }]}>
         <Ionicons 
@@ -83,19 +135,31 @@ export const SearchScreen = () => {
             value={searchQuery}
             onChangeText={handleSearch}
             autoFocus
+            editable={!loading}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch('')}>
+            <TouchableOpacity onPress={() => handleSearch('')} disabled={loading}>
               <Ionicons name="close-circle" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.cancelButton}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.cancelButton}
+          disabled={loading}
+        >
           <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>Cancel</Text>
         </TouchableOpacity>
       </View>
 
-      {!hasSearched ? (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+            Loading coordinates...
+          </Text>
+        </View>
+      ) : !hasSearched ? (
         <View style={styles.content}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Recent places</Text>
@@ -241,5 +305,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 14,
   },
 });

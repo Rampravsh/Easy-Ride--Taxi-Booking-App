@@ -1,7 +1,10 @@
+import { RideType, VehicleCategory } from './ride';
+
 export interface Car {
   id: string;
   name: string;
-  type: 'Transport' | 'Delivery' | 'Rental';
+  type: RideType | 'Transport' | 'Delivery' | 'Rental';
+  category: VehicleCategory;
   image: any;
   rating: number;
   reviews: number;

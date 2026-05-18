@@ -1,60 +1,79 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
-import { useTheme, spacing, radius } from '../../../theme';
+import { useTheme, spacing } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../components/AppButton';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../../redux/store';
+import { useGetRideDetailsQuery } from '../../../api/ride.api';
+import { setActiveRide, resetRideWorkflow } from '../../../redux/slices/rideSlice';
+import { RideService } from '../../../services/ride.service';
 
 const { width, height } = Dimensions.get('window');
-
-import { Ride, Driver, Car } from '../../../types';
-
-const MOCK_RIDE: Ride = {
-  id: 'R123',
-  car: {
-    id: 'C1',
-    name: 'Mustang Shelby GT',
-    type: 'Transport',
-    image: require('../../../../assets/images/red_mustang.png'),
-    rating: 4.9,
-    reviews: 531,
-    pricePerHour: 200,
-  },
-  driver: {
-    id: 'D1',
-    name: 'Sergio Ramasis',
-    avatar: require('../../../../assets/images/driver_sergio.png'),
-    rating: 4.9,
-    totalReviews: 531,
-    status: 'available',
-  },
-  pickupLocation: '2972 Westheimer Rd.',
-  destinationLocation: '1901 Thornridge Cir.',
-  distance: '800m',
-  duration: '3:35',
-  status: 'ongoing',
-  charges: {
-    baseFare: 200,
-    vat: 20,
-    promoDiscount: 0,
-    total: 220,
-  },
-  paymentMethod: {
-    id: 'P1',
-    label: '**** **** **** 8970',
-    type: 'Visa',
-  }
-};
 
 export const RideTrackingScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
-  const ride = MOCK_RIDE;
-  const driver = ride.driver!;
-  const car = ride.car;
+  const dispatch = useDispatch();
+
+  // Get active ride reference from Redux
+  const activeRide = useSelector((state: RootState) => state.ride.activeRide);
+
+  // Poll ride details dynamically every 3 seconds using built-in RTK Query polling
+  const { data: response, error, isLoading, refetch } = useGetRideDetailsQuery(
+    activeRide?._id || '',
+    {
+      skip: !activeRide?._id,
+      pollingInterval: 3000, // Poll every 3 seconds for real-time tracking updates
+    }
+  );
+
+  // Sync active ride back to redux store when fetched details change
+  useEffect(() => {
+    if (response?.data) {
+      dispatch(setActiveRide(response.data));
+    }
+  }, [response, dispatch]);
+
+  if (!activeRide) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="car-outline" size={72} color={theme.colors.textSecondary} />
+          <Text style={[styles.errorTitle, { color: theme.colors.text }]}>No Active Ride Found</Text>
+          <Text style={[styles.errorSubtitle, { color: theme.colors.textSecondary }]}>
+            You do not have any active ride request being tracked.
+          </Text>
+          <AppButton 
+            title="Go to Home" 
+            onPress={() => {
+              dispatch(resetRideWorkflow());
+              navigation.navigate('Home' as any);
+            }} 
+            style={styles.errorButton}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const rawRide = response?.data || activeRide;
+
+  // Adapter mapping from backend model to legacy UI expected fields
+  const uiRide = RideService.transformRideForUI(rawRide);
+  const driver = uiRide.driver;
+  const car = uiRide.car;
+  const statusLabel = RideService.getStatusLabel(rawRide.status);
+  const progress = RideService.getStatusProgress(rawRide.status);
+
+  const handleReturnHome = () => {
+    dispatch(resetRideWorkflow());
+    navigation.navigate('Home' as any);
+  };
 
   return (
     <View style={styles.container}>
@@ -69,37 +88,44 @@ export const RideTrackingScreen = () => {
       <SafeAreaView style={styles.header}>
         <TouchableOpacity 
           style={[styles.iconButton, { backgroundColor: theme.colors.primary }]}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate('Home' as any)}
         >
-          <Ionicons name="menu" size={24} color={theme.colors.secondary} />
+          <Ionicons name="home" size={24} color="#000" />
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.iconButton, { backgroundColor: theme.colors.white }]}
-        >
-          <Ionicons name="notifications-outline" size={24} color={theme.colors.secondary} />
-        </TouchableOpacity>
+        <View style={styles.otpBadge}>
+          <Text style={styles.otpLabel}>OTP CODE</Text>
+          <Text style={styles.otpValue}>{uiRide.otp}</Text>
+        </View>
       </SafeAreaView>
 
-      {/* Car on Map - Simplified representation */}
-      <View style={styles.carMarkerContainer}>
-         {/* Route Line - SVG or View based simplified route */}
-         <View style={[styles.routeLine, { backgroundColor: theme.colors.primary }]} />
-         <Ionicons name="car" size={32} color={theme.colors.danger} style={styles.carIcon} />
+      {/* Car on Map - Progress-based Visual Indicator */}
+      <View style={[styles.carMarkerContainer, { top: height * (0.45 - progress * 0.25) }]}>
+         <View style={[styles.routeLine, { backgroundColor: theme.colors.primary, height: 100 * (1 - progress) }]} />
+         <Ionicons name="car" size={32} color={theme.colors.primary} style={styles.carIcon} />
       </View>
 
-      {/* Bottom Sheet */}
+      {/* Bottom Tracking Sheet */}
       <View style={[styles.bottomSheet, { backgroundColor: theme.colors.background }]}>
         <View style={styles.handle} />
-        <TouchableOpacity style={styles.closeButton}>
-          <Ionicons name="close" size={20} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
+        
+        {/* Polling Indicator */}
+        <View style={styles.statusHeaderRow}>
+          <View style={styles.statusIndicatorRow}>
+            <View style={[styles.pulseCircle, { backgroundColor: theme.colors.primary }]} />
+            <Text style={[styles.statusText, { color: theme.colors.text }]}>
+              {statusLabel}
+            </Text>
+          </View>
+          {isLoading && <ActivityIndicator size="small" color={theme.colors.primary} />}
+        </View>
 
-        <Text style={[styles.statusText, { color: theme.colors.text }]}>
-          Your driver is coming in <Text style={{ fontWeight: 'bold' }}>{ride.duration}</Text>
+        <Text style={[styles.durationText, { color: theme.colors.textSecondary }]}>
+          Estimated Duration: <Text style={{ color: theme.colors.text, fontWeight: '700' }}>{uiRide.duration}</Text>
         </Text>
 
         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
+        {/* Driver Details */}
         <View style={styles.driverInfo}>
           <Image 
             source={driver.avatar}
@@ -108,12 +134,16 @@ export const RideTrackingScreen = () => {
           <View style={styles.driverDetails}>
             <Text style={[styles.driverName, { color: theme.colors.text }]}>{driver.name}</Text>
             <View style={styles.driverStats}>
-               <Ionicons name="location" size={12} color={theme.colors.textSecondary} />
-               <Text style={[styles.driverSubText, { color: theme.colors.textSecondary }]}> {ride.distance} (5 mins away)</Text>
+               <Ionicons name="navigate-outline" size={12} color={theme.colors.textSecondary} />
+               <Text style={[styles.driverSubText, { color: theme.colors.textSecondary }]}>
+                 {car.name} ({car.numberPlate})
+               </Text>
             </View>
             <View style={styles.driverStats}>
                <Ionicons name="star" size={12} color={theme.colors.primary} />
-               <Text style={[styles.driverSubText, { color: theme.colors.textSecondary }]}> {driver.rating} ({driver.totalReviews} reviews)</Text>
+               <Text style={[styles.driverSubText, { color: theme.colors.textSecondary }]}>
+                 {driver.rating} ({driver.totalReviews} trips)
+               </Text>
             </View>
           </View>
           <Image 
@@ -125,41 +155,74 @@ export const RideTrackingScreen = () => {
 
         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
+        {/* Payment Summary */}
         <View style={styles.paymentSection}>
-          <Text style={[styles.paymentTitle, { color: theme.colors.textSecondary }]}>Payment method</Text>
-          <Text style={[styles.paymentValue, { color: theme.colors.text }]}>${ride.charges.total.toFixed(2)}</Text>
+          <Text style={[styles.paymentTitle, { color: theme.colors.textSecondary }]}>Payment method ({uiRide.paymentMethod.type})</Text>
+          <Text style={[styles.paymentValue, { color: theme.colors.text }]}>${uiRide.charges.total.toFixed(2)}</Text>
         </View>
 
-        <View style={[styles.paymentCard, { backgroundColor: '#FFF9E6', borderColor: theme.colors.primary }]}>
-          <View style={styles.visaContainer}>
-            <Text style={styles.visaText}>{ride.paymentMethod.type.toUpperCase()}</Text>
-          </View>
+        <View style={[styles.paymentCard, { backgroundColor: 'rgba(0,0,0,0.02)', borderColor: theme.colors.border, borderWidth: 1 }]}>
+          <Ionicons name="wallet-outline" size={20} color={theme.colors.primary} />
           <View style={styles.cardInfo}>
-            <Text style={[styles.cardLabel, { color: theme.colors.text }]}>{ride.paymentMethod.label}</Text>
-            <Text style={[styles.cardExpiry, { color: theme.colors.textSecondary }]}>Expires: 12/26</Text>
+            <Text style={[styles.cardLabel, { color: theme.colors.text }]}>{uiRide.paymentMethod.label}</Text>
           </View>
         </View>
 
-        <View style={styles.footerActions}>
-          <TouchableOpacity 
-            style={[styles.actionButton, { borderColor: theme.colors.primary, borderWidth: 1 }]}
-            onPress={() => navigation.navigate('Calling' as any)}
-          >
-            <Ionicons name="call" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.actionButton, { borderColor: theme.colors.primary, borderWidth: 1 }]}
-            onPress={() => navigation.navigate('Chat' as any)}
-          >
-            <Ionicons name="chatbubble" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.cancelButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => navigation.navigate('CancelRide')}
-          >
-            <Text style={styles.cancelButtonText}>Cancel Ride</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Dynamic Action Overlays based on state termination */}
+        {rawRide.status === 'completed' || rawRide.status === 'cancelled' ? (
+          <View style={styles.terminationBanner}>
+            <Ionicons 
+              name={rawRide.status === 'completed' ? "checkmark-circle" : "close-circle"} 
+              size={36} 
+              color={rawRide.status === 'completed' ? theme.colors.primary : "#FF5252"} 
+            />
+            <Text style={[styles.terminationText, { color: theme.colors.text }]}>
+              {rawRide.status === 'completed' 
+                ? 'Your ride has concluded safely. Thank you for booking!' 
+                : `Ride cancelled. Reason: ${rawRide.cancellationReason || 'User Request'}`}
+            </Text>
+            <AppButton 
+              title="Return to Home" 
+              onPress={handleReturnHome}
+              style={styles.terminationBtn}
+            />
+          </View>
+        ) : (
+          <View style={styles.footerActions}>
+            <TouchableOpacity 
+              style={[styles.actionButton, { borderColor: theme.colors.primary, borderWidth: 1.5 }]}
+              onPress={() => {
+                if (driver.phone) {
+                  Alert.alert('Calling Driver', `Dialing partner at ${driver.phone}`);
+                } else {
+                  Alert.alert('Calling Driver', 'Connecting to partner voice network...');
+                }
+              }}
+            >
+              <Ionicons name="call" size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, { borderColor: theme.colors.primary, borderWidth: 1.5 }]}
+              onPress={() => navigation.navigate('Chat' as any)}
+            >
+              <Ionicons name="chatbubble" size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+            
+            {rawRide.status === 'searching' || rawRide.status === 'accepted' ? (
+              <TouchableOpacity 
+                style={[styles.cancelButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => navigation.navigate('CancelRide')}
+              >
+                <Text style={styles.cancelButtonText}>Cancel Ride</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.ongoingBadge}>
+                <Ionicons name="shield-checkmark" size={16} color="#000" />
+                <Text style={styles.ongoingText}>SECURE RIDE ACTIVE</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -171,7 +234,7 @@ const styles = StyleSheet.create({
   },
   map: {
     width: width,
-    height: height * 0.6,
+    height: height * 0.5,
   },
   header: {
     position: 'absolute',
@@ -180,7 +243,9 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
+    zIndex: 10,
   },
   iconButton: {
     width: 44,
@@ -194,22 +259,37 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+  otpBadge: {
+    backgroundColor: '#000000',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 4,
+  },
+  otpLabel: {
+    color: '#9CA3AF',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  otpValue: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
+  },
   carMarkerContainer: {
     position: 'absolute',
-    top: height * 0.25,
-    left: width * 0.4,
+    left: width * 0.45,
     alignItems: 'center',
   },
   routeLine: {
     width: 4,
-    height: 100,
     borderRadius: 2,
-    transform: [{ rotate: '20deg' }],
     opacity: 0.8,
   },
   carIcon: {
     marginTop: -10,
-    transform: [{ rotate: '110deg' }],
   },
   bottomSheet: {
     position: 'absolute',
@@ -217,6 +297,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: spacing.lg,
+    paddingBottom: 35,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     elevation: 20,
@@ -226,26 +307,41 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   handle: {
-    width: 60,
+    width: 50,
     height: 4,
     backgroundColor: '#E5E7EB',
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
-  closeButton: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
+  statusHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  statusIndicatorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pulseCircle: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   statusText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: spacing.md,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  durationText: {
+    fontSize: 13,
+    marginTop: 2,
+    marginBottom: spacing.sm,
   },
   divider: {
     height: 1,
-    width: '100%',
+    opacity: 0.08,
     marginVertical: spacing.md,
   },
   driverInfo: {
@@ -253,17 +349,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   driverAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: spacing.md,
   },
   driverDetails: {
     flex: 1,
-    marginLeft: spacing.md,
   },
   driverName: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   driverStats: {
     flexDirection: 'row',
@@ -271,11 +368,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   driverSubText: {
-    fontSize: 12,
+    fontSize: 11,
   },
   carImage: {
-    width: 100,
-    height: 60,
+    width: 70,
+    height: 50,
   },
   paymentSection: {
     flexDirection: 'row',
@@ -284,63 +381,100 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   paymentTitle: {
-    fontSize: 14,
+    fontSize: 13,
   },
   paymentValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '700',
   },
   paymentCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: 15,
-    borderWidth: 1,
+    borderRadius: 12,
+    gap: spacing.md,
     marginBottom: spacing.lg,
   },
-  visaContainer: {
-    backgroundColor: '#1A1A1A',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  visaText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
   cardInfo: {
-    marginLeft: spacing.md,
+    flex: 1,
   },
   cardLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-  },
-  cardExpiry: {
-    fontSize: 12,
   },
   footerActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: spacing.md,
   },
   actionButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButton: {
     flex: 1,
-    height: 50,
-    borderRadius: 15,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: spacing.md,
   },
   cancelButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#000000',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  ongoingBadge: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    flexDirection: 'row',
+    backgroundColor: '#E6F4EA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  ongoingText: {
+    color: '#137333',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  terminationBanner: {
+    alignItems: 'center',
+    paddingTop: spacing.xs,
+    gap: spacing.md,
+  },
+  terminationText: {
+    fontSize: 14,
+    textAlign: 'center',
+    fontWeight: '500',
+    paddingHorizontal: 20,
+    lineHeight: 20,
+  },
+  terminationBtn: {
+    width: '100%',
+    height: 48,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  errorSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: spacing.xl,
+  },
+  errorButton: {
+    width: '100%',
   },
 });
