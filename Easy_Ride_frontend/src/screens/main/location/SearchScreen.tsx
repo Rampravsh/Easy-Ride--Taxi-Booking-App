@@ -31,12 +31,16 @@ interface Place {
   type: 'recent' | 'result';
 }
 
-const RECENT_PLACES: Place[] = [
-  { id: '1', name: 'Office', address: '2972 Westheimer Rd. Santa Ana, Illinois 85486', distance: '2.7km', type: 'recent' },
-  { id: '2', name: 'Coffee shop', address: '1901 Thornridge Cir. Shiloh, Hawaii 81063', distance: '1.5km', type: 'recent' },
-  { id: '3', name: 'Shopping center', address: '4517 Washington Ave. Manchester, Kentucky 39495', distance: '4.3km', type: 'recent' },
-  { id: '4', name: 'Shopping mall', address: '4140 Parker Rd. Allentown, New Mexico 31134', distance: '4.8km', type: 'recent' },
-];
+import { useGetUserProfileQuery } from '../../../api/user.api';
+
+interface Place {
+  id: string;
+  name: string;
+  address: string;
+  distance: string;
+  type: 'recent' | 'result';
+  coordinates?: [number, number];
+}
 
 export const SearchScreen = () => {
   const { theme } = useTheme();
@@ -45,23 +49,52 @@ export const SearchScreen = () => {
   
   const pickupLocation = useSelector((state: RootState) => state.ride.pickupLocation);
   
+  // Fetch real saved addresses from profile
+  const { data: profileData } = useGetUserProfileQuery();
+  const savedAddresses = profileData?.data?.savedAddresses || [];
+
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Place[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = (text: string) => {
+  // Map saved addresses to Place objects
+  const recentPlaces: Place[] = savedAddresses.map((addr, idx) => ({
+    id: addr._id || String(idx),
+    name: addr.label,
+    address: addr.address,
+    distance: 'Saved Shortcut',
+    type: 'recent',
+    coordinates: addr.location?.coordinates,
+  }));
+
+  const handleSearch = async (text: string) => {
     setSearchQuery(text);
-    if (text.length > 0) {
+    if (text.trim().length > 1) {
       setHasSearched(true);
-      // Return matching mocks based on search term
-      const mockResults: Place[] = [
-        { id: '1', name: 'Burger Shop', address: '2972 Westheimer Rd. Santa Ana, Illinois 85486', distance: '2.7km', type: 'result' },
-        { id: '2', name: 'Shopping mall', address: '4140 Parker Rd. Allentown, New Mexico 31134', distance: '4.0km', type: 'result' },
-        { id: '3', name: 'Coffee Shop', address: '1901 Thornridge Cir. Shiloh, Hawaii 81063', distance: '1.1km', type: 'result' },
-        { id: '4', name: 'Office', address: '4517 Washington Ave. Manchester, Kentucky 39495', distance: '3.2km', type: 'result' },
-      ];
-      setResults(mockResults.filter(place => place.name.toLowerCase().includes(text.toLowerCase()) || place.address.toLowerCase().includes(text.toLowerCase())));
+      setLoading(true);
+      try {
+        // Dynamic Address Geocoding Suggestion
+        const geocoded = await LocationService.geocodeAddress(text);
+        if (geocoded) {
+          const matchedPlace: Place = {
+            id: 'geo-suggest-1',
+            name: text,
+            address: geocoded.address,
+            distance: 'Map match',
+            type: 'result',
+            coordinates: geocoded.coordinates,
+          };
+          setResults([matchedPlace]);
+        } else {
+          setResults([]);
+        }
+      } catch (err) {
+        console.warn('[SearchScreen] Typing geocode error:', err);
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
     } else {
       setHasSearched(false);
       setResults([]);
@@ -71,27 +104,34 @@ export const SearchScreen = () => {
   const handleSelectPlace = async (place: Place) => {
     setLoading(true);
     try {
-      // 1. Geocode drop destination
-      const dropResult = await LocationService.geocodeAddress(place.address);
+      let dropCoords = place.coordinates;
+      let dropAddress = place.address;
+
+      if (!dropCoords) {
+        const dropResult = await LocationService.geocodeAddress(place.address);
+        dropCoords = dropResult.coordinates;
+        dropAddress = dropResult.address;
+      }
+
       dispatch(
         setDestinationLocation({
-          address: place.name ? `${place.name}, ${dropResult.address}` : dropResult.address,
-          coordinates: dropResult.coordinates,
+          address: place.name ? `${place.name}, ${dropAddress}` : dropAddress,
+          coordinates: dropCoords,
         })
       );
 
-      // 2. Initialize pickup if not set
+      // Initialize pickup if not set
       if (!pickupLocation) {
-        const pickupResult = await LocationService.geocodeAddress('Current location');
+        const pickupResult = await LocationService.getCurrentLocation();
         dispatch(
           setPickupLocation({
-            address: 'Current Location (SF PACIFIC HEIGHTS)',
+            address: pickupResult.address,
             coordinates: pickupResult.coordinates,
           })
         );
       }
 
-      // 3. Proceed to map confirmation
+      // Proceed to map confirmation
       navigation.navigate('SelectLocation');
     } catch (err) {
       console.error('[SearchScreen] Selection error:', err);
@@ -108,9 +148,9 @@ export const SearchScreen = () => {
     >
       <View style={[styles.iconContainer, { backgroundColor: theme.colors.card }]}>
         <Ionicons 
-          name={item.type === 'recent' ? "time-outline" : "location-outline"} 
+          name={item.type === 'recent' ? "bookmark-outline" : "location-outline"} 
           size={20} 
-          color={theme.colors.textSecondary} 
+          color={theme.colors.primary} 
         />
       </View>
       <View style={styles.placeInfo}>
@@ -119,7 +159,7 @@ export const SearchScreen = () => {
           {item.address}
         </Text>
       </View>
-      <Text style={[styles.distance, { color: theme.colors.textSecondary }]}>{item.distance}</Text>
+      <Text style={[styles.distance, { color: theme.colors.primary, fontWeight: '600' }]}>{item.distance}</Text>
     </TouchableOpacity>
   );
 
@@ -152,33 +192,41 @@ export const SearchScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {loading ? (
+      {loading && searchQuery.length > 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-            Loading coordinates...
+            Searching locations...
           </Text>
         </View>
       ) : !hasSearched ? (
         <View style={styles.content}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Recent places</Text>
-            <TouchableOpacity>
-              <Text style={{ color: theme.colors.primary }}>Clear All</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Saved & Recent Places</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Address')}>
+              <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>Manage</Text>
             </TouchableOpacity>
           </View>
           <FlatList
-            data={RECENT_PLACES}
+            data={recentPlaces}
             renderItem={renderPlaceItem}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Ionicons name="location-outline" size={48} color={theme.colors.border} />
+                <Text style={[styles.emptyTitle, { color: theme.colors.text, fontSize: 16, marginTop: 10 }]}>No Saved Places</Text>
+                <Text style={[styles.emptyDescription, { color: theme.colors.textSecondary, fontSize: 12 }]}>
+                  Add Home, Work or Gym in settings to find them quickly.
+                </Text>
+              </View>
+            }
           />
         </View>
       ) : results.length > 0 ? (
         <View style={styles.content}>
           <Text style={[styles.resultsLabel, { color: theme.colors.textSecondary }]}>
-            Results for <Text style={{ color: theme.colors.primary }}>"{searchQuery}"</Text>
-            {'   '}{results.length} found
+            Suggestions for <Text style={{ color: theme.colors.primary }}>"{searchQuery}"</Text>
           </Text>
           <FlatList
             data={results}
@@ -189,14 +237,10 @@ export const SearchScreen = () => {
         </View>
       ) : (
         <View style={styles.emptyState}>
-          <Image 
-            source={require('../../../../assets/images/not_found.png')} 
-            style={styles.illustration}
-            resizeMode="contain"
-          />
-          <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>Not Found</Text>
+          <Ionicons name="search-outline" size={60} color={theme.colors.border} />
+          <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No Matches Found</Text>
           <Text style={[styles.emptyDescription, { color: theme.colors.textSecondary }]}>
-            Sorry, the keyword you entered cannot be found, please check again or search with another keyword.
+            Unable to resolve coordinates. Try checking spelling or adding city names.
           </Text>
         </View>
       )}

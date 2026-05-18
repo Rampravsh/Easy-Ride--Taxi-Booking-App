@@ -43,7 +43,7 @@ const FullScreenLoading = () => {
 
 export const AppNavigator = () => {
   const dispatch = useAppDispatch();
-  const { initialized, authenticated } = useAppSelector((state) => state.auth);
+  const { initialized, authenticated, onboardingCompleted } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     // Initialize deep linking parameters
@@ -92,7 +92,7 @@ export const AppNavigator = () => {
       
       <NavigationContainer linking={deepLinkService.getLinkingConfig(null) as any}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {authenticated ? (
+          {authenticated && onboardingCompleted ? (
             <Stack.Screen name="Main" component={MainNavigator} />
           ) : (
             <Stack.Screen name="Auth" component={AuthNavigator} />

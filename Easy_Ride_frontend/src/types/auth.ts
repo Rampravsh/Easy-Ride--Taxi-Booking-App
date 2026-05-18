@@ -91,4 +91,9 @@ export interface AuthState {
   initialized: boolean; // Flag if auth restoration check completed
   loading: boolean; // General slice loading state
   error: string | null; // Slice error state
+  onboardingCompleted: boolean; // Flag if onboarding walkthrough is completed
+  locationPermissionGranted: boolean; // Flag if location access is granted
+  notificationPermissionGranted: boolean; // Flag if FCM notification permission is granted
+  biometricEnabled: boolean; // Flag if biometric auth is enabled by the user
+  hydrated: boolean; // Flag if AsyncStorage credentials are fully hydrated
 }

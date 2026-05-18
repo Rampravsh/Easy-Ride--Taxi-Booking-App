@@ -120,6 +120,19 @@ export const FirebaseService = {
   },
 
   /**
+   * Confirms the phone verification code (OTP) and signs the user in.
+   */
+  async confirmPhoneOTP(confirmationResult: any, code: string): Promise<FirebaseUser> {
+    try {
+      const userCredential = await confirmationResult.confirm(code);
+      return userCredential.user;
+    } catch (error) {
+      console.error('[FirebaseService] Phone verification code confirmation failed:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Logs out from the Firebase client.
    */
   async logout(): Promise<void> {

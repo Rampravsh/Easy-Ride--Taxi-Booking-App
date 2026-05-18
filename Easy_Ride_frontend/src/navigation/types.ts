@@ -49,19 +49,20 @@ export type AuthStackParamList = {
   Onboarding3: undefined;
   EnableLocation: undefined;
   Welcome: undefined;
-  SignUp: undefined;
-  SignIn: undefined;
+  PhoneAuth: undefined;
+  NotificationPermission: undefined;
+  BiometricSetup: undefined;
   OtpVerification: { 
     type: 'phone' | 'email'; 
     value: string;
     nextScreen: keyof AuthStackParamList;
+    confirmationResult?: any;
   };
-  SetPassword: { isNew?: boolean };
   CompleteProfile: undefined;
-  ForgotPassword: undefined;
   Congratulations: { 
     title: string; 
     message: string; 
     nextScreen: keyof RootStackParamList | keyof AuthStackParamList; 
   };
 };
+

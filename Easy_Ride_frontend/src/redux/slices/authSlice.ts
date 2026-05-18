@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AuthState, BackendUser, UserRole } from '../../types/auth';
 import { AuthService } from '../../services/auth.service';
+import { StorageService } from '../../services/storage.service';
+import { STORAGE_KEYS } from '../../constants/api.constants';
 
 const initialState: AuthState = {
   firebaseUser: null,
@@ -10,6 +12,11 @@ const initialState: AuthState = {
   initialized: false,
   loading: false,
   error: null,
+  onboardingCompleted: false,
+  locationPermissionGranted: false,
+  notificationPermissionGranted: false,
+  biometricEnabled: false,
+  hydrated: false,
 };
 
 /**
@@ -20,10 +27,18 @@ export const restoreSessionThunk = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const session = await AuthService.restoreSession();
-      if (!session) {
-        return rejectWithValue('No cached session found');
-      }
-      return session;
+      const onboardingCompleted = await StorageService.getItem<boolean>(STORAGE_KEYS.ONBOARDING_COMPLETED) || false;
+      const locationPermissionGranted = await StorageService.getItem<boolean>(STORAGE_KEYS.LOCATION_GRANTED) || false;
+      const notificationPermissionGranted = await StorageService.getItem<boolean>(STORAGE_KEYS.NOTIFICATION_GRANTED) || false;
+      const biometricEnabled = await StorageService.getItem<boolean>(STORAGE_KEYS.BIOMETRIC_ENABLED) || false;
+
+      return {
+        session,
+        onboardingCompleted,
+        locationPermissionGranted,
+        notificationPermissionGranted,
+        biometricEnabled,
+      };
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to restore session');
     }
@@ -89,6 +104,25 @@ const authSlice = createSlice({
     clearAuthError(state) {
       state.error = null;
     },
+    setOnboardingCompleted(state, action: PayloadAction<boolean>) {
+      state.onboardingCompleted = action.payload;
+      StorageService.setItem(STORAGE_KEYS.ONBOARDING_COMPLETED, action.payload);
+    },
+    setLocationPermissionGranted(state, action: PayloadAction<boolean>) {
+      state.locationPermissionGranted = action.payload;
+      StorageService.setItem(STORAGE_KEYS.LOCATION_GRANTED, action.payload);
+    },
+    setNotificationPermissionGranted(state, action: PayloadAction<boolean>) {
+      state.notificationPermissionGranted = action.payload;
+      StorageService.setItem(STORAGE_KEYS.NOTIFICATION_GRANTED, action.payload);
+    },
+    setBiometricEnabled(state, action: PayloadAction<boolean>) {
+      state.biometricEnabled = action.payload;
+      StorageService.setItem(STORAGE_KEYS.BIOMETRIC_ENABLED, action.payload);
+    },
+    setHydrated(state, action: PayloadAction<boolean>) {
+      state.hydrated = action.payload;
+    },
   },
   extraReducers: (builder) => {
     // 1. Session Restoration
@@ -97,14 +131,22 @@ const authSlice = createSlice({
       state.error = null;
     });
     builder.addCase(restoreSessionThunk.fulfilled, (state, action) => {
-      state.firebaseToken = action.payload.token;
-      state.backendUser = action.payload.user;
-      state.authenticated = true;
+      if (action.payload.session) {
+        state.firebaseToken = action.payload.session.token;
+        state.backendUser = action.payload.session.user;
+        state.authenticated = true;
+      }
+      state.onboardingCompleted = action.payload.onboardingCompleted;
+      state.locationPermissionGranted = action.payload.locationPermissionGranted;
+      state.notificationPermissionGranted = action.payload.notificationPermissionGranted;
+      state.biometricEnabled = action.payload.biometricEnabled;
       state.initialized = true;
+      state.hydrated = true;
       state.loading = false;
     });
     builder.addCase(restoreSessionThunk.rejected, (state) => {
       state.initialized = true;
+      state.hydrated = true;
       state.loading = false;
     });
 
@@ -147,5 +189,15 @@ const authSlice = createSlice({
   },
 });
 
-export const { setFirebaseUser, setFirebaseToken, setBackendUser, clearAuthError } = authSlice.actions;
+export const {
+  setFirebaseUser,
+  setFirebaseToken,
+  setBackendUser,
+  clearAuthError,
+  setOnboardingCompleted,
+  setLocationPermissionGranted,
+  setNotificationPermissionGranted,
+  setBiometricEnabled,
+  setHydrated,
+} = authSlice.actions;
 export default authSlice.reducer;

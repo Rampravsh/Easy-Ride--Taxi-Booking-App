@@ -16,6 +16,10 @@ export const STORAGE_KEYS = {
   FIREBASE_TOKEN: '@easy_ride_firebase_token',
   BACKEND_USER: '@easy_ride_backend_user',
   AUTHENTICATED: '@easy_ride_authenticated',
+  ONBOARDING_COMPLETED: '@easy_ride_onboarding_completed',
+  LOCATION_GRANTED: '@easy_ride_location_granted',
+  NOTIFICATION_GRANTED: '@easy_ride_notification_granted',
+  BIOMETRIC_ENABLED: '@easy_ride_biometric_enabled',
 };
 
 /**

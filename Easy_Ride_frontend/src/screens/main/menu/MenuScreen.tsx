@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
 import { useTheme, spacing, radius } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppSelector, useAppDispatch } from '../../../redux/hooks';
+import { logoutThunk } from '../../../redux/slices/authSlice';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +26,45 @@ const MENU_ITEMS = [
 export const MenuScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const dispatch = useAppDispatch();
+  
+  // Hydrate user profile from Redux State
+  const backendUser = useAppSelector((state) => state.auth.backendUser);
+  const userName = backendUser?.fullName || 'Guest Rider';
+  const userEmail = backendUser?.email || 'guest@easyride.com';
+  const userAvatar = backendUser?.profileImage 
+    ? { uri: backendUser.profileImage } 
+    : require('../../../../assets/images/user_avatar.png');
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to log out of Easy Ride?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Log Out', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dispatch(logoutThunk()).unwrap();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'SignIn' as any }],
+              });
+            } catch (err) {
+              console.error('[MenuScreen] Logout thunk failed:', err);
+              // Fail-safe redirect
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'SignIn' as any }],
+              });
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -44,16 +85,19 @@ export const MenuScreen = () => {
           <View style={styles.profileSection}>
             <View style={[styles.avatarContainer, { borderColor: theme.colors.primary }]}>
               <Image 
-                source={require('../../../../assets/images/user_avatar.png')} 
+                source={userAvatar} 
                 style={styles.avatar} 
               />
-              <View style={[styles.cameraBadge, { backgroundColor: theme.colors.primary }]}>
+              <TouchableOpacity 
+                style={[styles.cameraBadge, { backgroundColor: theme.colors.primary }]}
+                onPress={() => navigation.navigate('Tabs', { screen: 'Profile' })}
+              >
                 <Ionicons name="camera" size={12} color="#FFFFFF" />
-              </View>
+              </TouchableOpacity>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={[styles.userName, { color: theme.colors.text }]}>Nate Samson</Text>
-              <Text style={[styles.userEmail, { color: theme.colors.textSecondary }]}>nate@email.com</Text>
+              <Text style={[styles.userName, { color: theme.colors.text }]}>{userName}</Text>
+              <Text style={[styles.userEmail, { color: theme.colors.textSecondary }]}>{userEmail}</Text>
             </View>
           </View>
 
@@ -64,8 +108,9 @@ export const MenuScreen = () => {
                 style={[styles.menuItem, { borderBottomColor: theme.colors.border }]}
                 onPress={() => {
                   if (item.isLogout) {
-                     // Handle logout logic
-                     navigation.navigate('SignIn');
+                     handleLogout();
+                  } else if (item.screen === 'Profile') {
+                     navigation.navigate('Tabs', { screen: 'Profile' });
                   } else {
                      navigation.navigate(item.screen);
                   }

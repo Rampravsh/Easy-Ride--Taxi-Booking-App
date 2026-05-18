@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
-import { useTheme, spacing } from '../../../theme';
+import { useTheme, spacing, radius, typography } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../components/AppButton';
 import { useSelector, useDispatch } from 'react-redux';
@@ -55,6 +55,7 @@ export const RideTrackingScreen = () => {
   const [riderCoords, setRiderCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [hasFitInitial, setHasFitInitial] = useState(false);
   const [etaText, setEtaText] = useState<string>('');
+  const [mapPerspective, setMapPerspective] = useState<'2D' | '3D'>('2D');
 
   // Socket.IO Room Lifecycle Orchestration
   useEffect(() => {
@@ -174,7 +175,7 @@ export const RideTrackingScreen = () => {
     
     if (coordsToFit.length >= 2) {
       mapRef.current.fitToCoordinates(coordsToFit, {
-        edgePadding: { top: 120, right: 80, bottom: 120, left: 80 },
+        edgePadding: { top: 120, right: 80, bottom: height * 0.42, left: 80 },
         animated: true,
       });
       setHasFitInitial(true);
@@ -186,11 +187,42 @@ export const RideTrackingScreen = () => {
     navigation.navigate('Home' as any);
   };
 
+  const handleRecenter = () => {
+    if (!mapRef.current) return;
+    const targetRegion = {
+      latitude: riderCoords?.latitude || pickupCoords?.latitude || 37.78825,
+      longitude: riderCoords?.longitude || pickupCoords?.longitude || -122.4324,
+      latitudeDelta: 0.015,
+      longitudeDelta: 0.01,
+    };
+    mapRef.current.animateToRegion(targetRegion, 1000);
+  };
+
+  const handleZoom = (direction: 'in' | 'out') => {
+    if (!mapRef.current) return;
+    mapRef.current.getCamera().then((camera) => {
+      if (camera.zoom !== undefined) {
+        camera.zoom += direction === 'in' ? 1.2 : -1.2;
+        mapRef.current?.animateCamera(camera, { duration: 400 });
+      }
+    });
+  };
+
+  const handleToggleTilt = () => {
+    if (!mapRef.current) return;
+    const is3D = mapPerspective === '3D';
+    mapRef.current.getCamera().then((camera) => {
+      camera.pitch = is3D ? 0 : 45; // Tilt camera for premium look
+      mapRef.current?.animateCamera(camera, { duration: 600 });
+      setMapPerspective(is3D ? '2D' : '3D');
+    });
+  };
+
   const mapRegion = {
     latitude: riderCoords?.latitude || pickupCoords?.latitude || 37.78825,
     longitude: riderCoords?.longitude || pickupCoords?.longitude || -122.4324,
-    latitudeDelta: 0.03,
-    longitudeDelta: 0.015,
+    latitudeDelta: 0.02,
+    longitudeDelta: 0.01,
   };
 
   const darkMapStyle = [
@@ -209,21 +241,23 @@ export const RideTrackingScreen = () => {
         style={styles.map}
         initialRegion={mapRegion}
         customMapStyle={isDark ? darkMapStyle : []}
+        showsUserLocation
+        showsMyLocationButton={false}
       >
         {pickupCoords && (
-          <Marker
-            coordinate={pickupCoords}
-            title="Pickup Address"
-            pinColor={theme.colors.primary}
-          />
+          <Marker coordinate={pickupCoords} title="Pickup Coordinates">
+            <View style={[styles.customPin, { backgroundColor: theme.colors.primary }]}>
+              <Ionicons name="location" size={15} color="#000" />
+            </View>
+          </Marker>
         )}
         
         {destCoords && (
-          <Marker
-            coordinate={destCoords}
-            title="Destination Address"
-            pinColor="#FF5252"
-          />
+          <Marker coordinate={destCoords} title="Destination Coordinates">
+            <View style={[styles.customPin, { backgroundColor: '#FF5252' }]}>
+              <Ionicons name="flag" size={15} color="#FFF" />
+            </View>
+          </Marker>
         )}
 
         {/* Live Driver Vehicle Marker with interpolation and heading rotation */}
@@ -238,7 +272,7 @@ export const RideTrackingScreen = () => {
             rotation={riderLiveLocation?.heading || 0}
           >
             <View style={[styles.driverMarkerContainer, { borderColor: theme.colors.primary }]}>
-              <Ionicons name="car" size={24} color="#000" />
+              <Ionicons name="car-sport" size={24} color="#000" />
             </View>
           </Marker>
         )}
@@ -262,16 +296,32 @@ export const RideTrackingScreen = () => {
         )}
       </MapView>
 
+      {/* Floating Map Navigation Dials (Zoom, Recenter, Perspective Pitch) */}
+      <View style={styles.floatingMapDials}>
+        <TouchableOpacity style={[styles.dialBtn, { backgroundColor: theme.colors.background }]} onPress={() => handleZoom('in')}>
+          <Ionicons name="add" size={20} color={theme.colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.dialBtn, { backgroundColor: theme.colors.background }]} onPress={() => handleZoom('out')}>
+          <Ionicons name="remove" size={20} color={theme.colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.dialBtn, { backgroundColor: theme.colors.background }]} onPress={handleToggleTilt}>
+          <Text style={[styles.dialText, { color: theme.colors.text }]}>{mapPerspective}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.dialBtn, { backgroundColor: theme.colors.background }]} onPress={handleRecenter}>
+          <Ionicons name="locate" size={20} color={theme.colors.primary} />
+        </TouchableOpacity>
+      </View>
+
       {/* Top Floating Header */}
       <SafeAreaView style={styles.header}>
         <TouchableOpacity 
-          style={[styles.iconButton, { backgroundColor: theme.colors.primary }]}
+          style={[styles.iconButton, { backgroundColor: theme.colors.background }]}
           onPress={() => navigation.navigate('Home' as any)}
         >
-          <Ionicons name="home" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <View style={styles.otpBadge}>
-          <Text style={styles.otpLabel}>OTP CODE</Text>
+          <Text style={styles.otpLabel}>SECURITY CODE OTP</Text>
           <Text style={styles.otpValue}>{uiRide.otp}</Text>
         </View>
       </SafeAreaView>
@@ -297,7 +347,7 @@ export const RideTrackingScreen = () => {
       {connectionState === 'connected' && (
         <View style={styles.connectedBadge}>
           <View style={styles.greenPulse} />
-          <Text style={styles.connectedBadgeText}>Realtime Live ({socketLatency}ms)</Text>
+          <Text style={styles.connectedBadgeText}>Live Satellite Connected ({socketLatency}ms)</Text>
         </View>
       )}
 
@@ -317,7 +367,7 @@ export const RideTrackingScreen = () => {
         </View>
 
         <Text style={[styles.durationText, { color: theme.colors.textSecondary }]}>
-          Estimated Duration: <Text style={{ color: theme.colors.text, fontWeight: '700' }}>{etaText}</Text>
+          Estimated Arrival Duration: <Text style={{ color: theme.colors.text, fontWeight: '800' }}>{etaText}</Text>
         </Text>
 
         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -331,15 +381,15 @@ export const RideTrackingScreen = () => {
           <View style={styles.driverDetails}>
             <Text style={[styles.driverName, { color: theme.colors.text }]}>{driver.name}</Text>
             <View style={styles.driverStats}>
-               <Ionicons name="navigate-outline" size={12} color={theme.colors.textSecondary} />
+               <Ionicons name="navigate-outline" size={12} color={theme.colors.textSecondary} style={{ marginRight: 4 }} />
                <Text style={[styles.driverSubText, { color: theme.colors.textSecondary }]}>
                  {car.name} ({car.numberPlate})
                </Text>
             </View>
             <View style={styles.driverStats}>
-               <Ionicons name="star" size={12} color={theme.colors.primary} />
+               <Ionicons name="star" size={12} color={theme.colors.primary} style={{ marginRight: 4 }} />
                <Text style={[styles.driverSubText, { color: theme.colors.textSecondary }]}>
-                 {driver.rating} ({driver.totalReviews} trips)
+                 {driver.rating} ({driver.totalReviews} trips completed)
                </Text>
             </View>
           </View>
@@ -358,7 +408,7 @@ export const RideTrackingScreen = () => {
           <Text style={[styles.paymentValue, { color: theme.colors.text }]}>${uiRide.charges.total.toFixed(2)}</Text>
         </View>
 
-        <View style={[styles.paymentCard, { backgroundColor: 'rgba(0,0,0,0.02)', borderColor: theme.colors.border, borderWidth: 1 }]}>
+        <View style={[styles.paymentCard, { backgroundColor: 'rgba(0,0,0,0.02)', borderColor: theme.colors.border + '33', borderWidth: 1 }]}>
           <Ionicons name="wallet-outline" size={20} color={theme.colors.primary} />
           <View style={styles.cardInfo}>
             <Text style={[styles.cardLabel, { color: theme.colors.text }]}>{uiRide.paymentMethod.label}</Text>
@@ -396,13 +446,13 @@ export const RideTrackingScreen = () => {
                 }
               }}
             >
-              <Ionicons name="call" size={24} color={theme.colors.primary} />
+              <Ionicons name="call" size={20} color={theme.colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.actionButton, { borderColor: theme.colors.primary, borderWidth: 1.5 }]}
               onPress={() => navigation.navigate('Chat' as any)}
             >
-              <Ionicons name="chatbubble" size={24} color={theme.colors.primary} />
+              <Ionicons name="chatbubble" size={20} color={theme.colors.primary} />
             </TouchableOpacity>
             
             {rawRide.status === 'searching' || rawRide.status === 'accepted' || rawRide.status === 'arriving' ? (
@@ -415,7 +465,7 @@ export const RideTrackingScreen = () => {
             ) : (
               <View style={styles.ongoingBadge}>
                 <Ionicons name="shield-checkmark" size={16} color="#000" />
-                <Text style={styles.ongoingText}>SECURE RIDE ACTIVE</Text>
+                <Text style={styles.ongoingText}>SECURE TRIP ACTIVE</Text>
               </View>
             )}
           </View>
@@ -431,7 +481,44 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFillObject,
-    height: height * 0.58,
+    height: height * 0.62,
+  },
+  customPin: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  floatingMapDials: {
+    position: 'absolute',
+    right: 20,
+    top: height * 0.22,
+    zIndex: 9,
+    gap: spacing.sm,
+  },
+  dialBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  dialText: {
+    fontSize: 11,
+    fontWeight: '900',
   },
   header: {
     position: 'absolute',
@@ -460,15 +547,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     elevation: 4,
   },
   otpLabel: {
     color: '#9CA3AF',
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontSize: 7,
+    fontWeight: '900',
+    letterSpacing: 1.2,
   },
   otpValue: {
     color: '#FFFFFF',
@@ -543,16 +630,16 @@ const styles = StyleSheet.create({
     right: 0,
     padding: spacing.lg,
     paddingBottom: 35,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     elevation: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.12,
     shadowRadius: 10,
   },
   handle: {
-    width: 50,
+    width: 44,
     height: 4,
     backgroundColor: '#E5E7EB',
     borderRadius: 2,
@@ -636,7 +723,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: 12,
+    borderRadius: 16,
     gap: spacing.md,
     marginBottom: spacing.lg,
   },
