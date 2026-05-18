@@ -16,6 +16,12 @@ import { callService } from '../services/call.service';
 import { NotificationService } from '../services/notification.service';
 import { realtimeRideService } from '../services/realtimeRide.service';
 
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { AppStateHandler } from '../components/AppStateHandler';
+import { OfflineBanner } from '../components/OfflineBanner';
+import { GlobalLoader } from '../components/GlobalLoader';
+import { deepLinkService } from '../services/deepLink.service';
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /**
@@ -40,6 +46,9 @@ export const AppNavigator = () => {
   const { initialized, authenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
+    // Initialize deep linking parameters
+    deepLinkService.initialize();
+    
     // Attempt session restoration from AsyncStorage
     dispatch(restoreSessionThunk());
   }, [dispatch]);
@@ -76,15 +85,21 @@ export const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {authenticated ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
-        ) : (
-          <Stack.Screen name="Auth" component={AuthNavigator} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ErrorBoundary>
+      <AppStateHandler />
+      <OfflineBanner />
+      <GlobalLoader />
+      
+      <NavigationContainer linking={deepLinkService.getLinkingConfig(null) as any}>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {authenticated ? (
+            <Stack.Screen name="Main" component={MainNavigator} />
+          ) : (
+            <Stack.Screen name="Auth" component={AuthNavigator} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </ErrorBoundary>
   );
 };
 

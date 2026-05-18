@@ -10,6 +10,8 @@ import paymentReducer from './slices/paymentSlice';
 import transactionReducer from './slices/transactionSlice';
 import chatReducer from './slices/chatSlice';
 import callReducer from './slices/callSlice';
+import appReducer from './slices/appSlice';
+import networkReducer from './slices/networkSlice';
 import { baseApi } from '../api/baseApi';
 import { registerUnauthorizedHandler } from '../api/axios';
 
@@ -29,6 +31,8 @@ export const store = configureStore({
     transaction: transactionReducer,
     chat: chatReducer,
     call: callReducer,
+    app: appReducer,
+    network: networkReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
 
