@@ -1,30 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, StatusBar, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { 
   FadeInDown, 
-  FadeInUp,
   useSharedValue, 
   useAnimatedStyle, 
   withSpring, 
   withTiming,
   withDelay,
   withRepeat,
-  withSequence
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { AuthStackParamList } from '../../navigation/types';
-import { useTheme, spacing, radius, typography } from '../../theme';
+import { useTheme, spacing, radius } from '../../theme';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { setOnboardingCompleted } from '../../redux/slices/authSlice';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  delay: number;
+  speed: number;
+  rotation: number;
+}
+
 // Tiny helper to generate simulated confetti particles
-const createConfettiParticles = (count: number) => {
+const createConfettiParticles = (count: number): Particle[] => {
   return Array.from({ length: count }, (_, i) => ({
     id: i,
     x: Math.random() * width,
@@ -35,6 +44,45 @@ const createConfettiParticles = (count: number) => {
     speed: 3 + Math.random() * 4,
     rotation: Math.random() * 360,
   }));
+};
+
+/**
+ * Dedicated Sub-Component to follow the Rules of Hooks.
+ * Hook calls (useSharedValue, useAnimatedStyle, useEffect) are bound inside a proper Component instance.
+ */
+const ConfettiParticle = ({ p }: { p: Particle }) => {
+  const particleY = useSharedValue(p.y);
+  const particleRotation = useSharedValue(p.rotation);
+
+  useEffect(() => {
+    particleY.value = withDelay(p.delay, withTiming(height + 50, { duration: 2500 + p.speed * 200 }));
+    particleRotation.value = withDelay(p.delay, withRepeat(withTiming(p.rotation + 360, { duration: 2000 }), -1, false));
+  }, [p]);
+
+  const animatedParticleStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateY: particleY.value },
+        { rotate: `${particleRotation.value}deg` }
+      ],
+    };
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.confetti,
+        {
+          left: p.x,
+          width: p.size,
+          height: p.size,
+          backgroundColor: p.color,
+          borderRadius: p.size / 2,
+        },
+        animatedParticleStyle,
+      ]}
+    />
+  );
 };
 
 export const CongratulationsScreen = () => {
@@ -52,6 +100,14 @@ export const CongratulationsScreen = () => {
   // Success icon animations
   const iconScale = useSharedValue(0.3);
   const iconOpacity = useSharedValue(0);
+
+  const handleFinishOnboarding = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    
+    // Setting onboardingCompleted = true in Redux saves it to AsyncStorage persistently
+    // and causes index.tsx to dynamically swap Auth stack with Main dashboard Navigator!
+    dispatch(setOnboardingCompleted(true));
+  };
 
   useEffect(() => {
     // Elegant entrance spring
@@ -74,14 +130,6 @@ export const CongratulationsScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleFinishOnboarding = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    
-    // Setting onboardingCompleted = true in Redux saves it to AsyncStorage persistently
-    // and causes index.tsx to dynamically swap Auth stack with Main dashboard Navigator!
-    dispatch(setOnboardingCompleted(true));
-  };
-
   const iconAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: iconScale.value }],
@@ -93,43 +141,10 @@ export const CongratulationsScreen = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
 
-      {/* Render Simulated Floating Confetti Particles using simple styling approximation */}
-      {confettiParticles.map((p) => {
-        // Simple Reanimated Confetti drop simulation
-        const particleY = useSharedValue(p.y);
-        const particleRotation = useSharedValue(p.rotation);
-
-        useEffect(() => {
-          particleY.value = withDelay(p.delay, withTiming(height + 50, { duration: 2500 + p.speed * 200 }));
-          particleRotation.value = withDelay(p.delay, withRepeat(withTiming(p.rotation + 360, { duration: 2000 }), -1, false));
-        }, []);
-
-        const animatedParticleStyle = useAnimatedStyle(() => {
-          return {
-            transform: [
-              { translateY: particleY.value },
-              { rotate: `${particleRotation.value}deg` }
-            ],
-          };
-        });
-
-        return (
-          <Animated.View
-            key={p.id}
-            style={[
-              styles.confetti,
-              {
-                left: p.x,
-                width: p.size,
-                height: p.size,
-                backgroundColor: p.color,
-                borderRadius: p.size / 2,
-              },
-              animatedParticleStyle,
-            ]}
-          />
-        );
-      })}
+      {/* Render Floating Confetti Particles legally using a sub-component */}
+      {confettiParticles.map((p) => (
+        <ConfettiParticle key={p.id} p={p} />
+      ))}
 
       <View style={styles.content}>
         {/* Animated Big success badge */}

@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native folders (these are built in the cloud, so don't upload local ones)
+/ios
+/android
+
+# local env files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env*.local
+
+# typescript
+*.tsbuildinfo
