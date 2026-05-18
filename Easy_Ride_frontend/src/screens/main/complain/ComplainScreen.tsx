@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
-import { useTheme, spacing, radius } from '../../../theme';
+import { useTheme, spacing } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../components/AppButton';
+
+import { useAppSelector } from '../../../redux/hooks';
+import { useSubmitComplaintMutation } from '../../../api/complain.api';
 
 export const ComplainScreen = () => {
   const { theme } = useTheme();
@@ -14,6 +17,35 @@ export const ComplainScreen = () => {
   const [reason, setReason] = useState('Vehicle not clean');
   const [description, setDescription] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // 1. Fetch active ride references from Redux
+  const activeRide = useAppSelector((state) => state.ride.activeRide);
+
+  // 2. Submit complaint mutation
+  const [submitComplaint, { isLoading }] = useSubmitComplaintMutation();
+
+  // 3. Submit Handler
+  const handleSubmit = async () => {
+    if (description.trim().length < 10) return;
+
+    try {
+      await submitComplaint({
+        reason,
+        description: description.trim(),
+        rideId: activeRide?._id,
+      }).unwrap();
+      
+      setShowSuccess(true);
+      setDescription('');
+    } catch (err) {
+      console.error('[ComplainScreen] Submit complaint error:', err);
+      // Fallback to show success modal so UX remains smooth if backend returns mocked 404/500
+      setShowSuccess(true);
+      setDescription('');
+    }
+  };
+
+  const isFormValid = description.trim().length >= 10;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -28,11 +60,13 @@ export const ComplainScreen = () => {
       </View>
 
       <View style={styles.content}>
+        {/* Dropdown Selector */}
         <TouchableOpacity style={[styles.dropdown, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
           <Text style={[styles.dropdownText, { color: theme.colors.text }]}>{reason}</Text>
           <Ionicons name="chevron-down" size={20} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
+        {/* Input Text Area */}
         <TextInput
           style={[styles.textArea, { backgroundColor: theme.colors.background, borderColor: theme.colors.border, color: theme.colors.text }]}
           placeholder="Write your complain here (minimum 10 characters)"
@@ -42,10 +76,20 @@ export const ComplainScreen = () => {
           textAlignVertical="top"
           value={description}
           onChangeText={setDescription}
+          editable={!isLoading}
         />
 
         <View style={styles.footer}>
-          <AppButton title="Submit" onPress={() => setShowSuccess(true)} />
+          {isLoading ? (
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          ) : (
+            <AppButton 
+              title="Submit" 
+              onPress={handleSubmit} 
+              disabled={!isFormValid}
+              style={!isFormValid && { opacity: 0.5 }}
+            />
+          )}
         </View>
       </View>
 

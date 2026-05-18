@@ -9,6 +9,13 @@ import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { restoreSessionThunk } from '../redux/slices/authSlice';
 import { useTheme } from '../theme';
 
+// Realtime Services Orchestration
+import { socketService } from '../services/socket.service';
+import { realtimeChatService } from '../services/realtimeChat.service';
+import { callService } from '../services/call.service';
+import { NotificationService } from '../services/notification.service';
+import { realtimeRideService } from '../services/realtimeRide.service';
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /**
@@ -36,6 +43,33 @@ export const AppNavigator = () => {
     // Attempt session restoration from AsyncStorage
     dispatch(restoreSessionThunk());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (authenticated) {
+      console.log('📡 [AppNavigator] User authenticated, boot-strapping realtime ecosystem...');
+      
+      // Establish socket connection
+      socketService.connect().then(() => {
+        // Initialize listener subscriptions
+        realtimeChatService.initialize();
+        callService.initialize();
+        NotificationService.initialize();
+        realtimeRideService.initialize();
+      }).catch((err) => {
+        console.error('📡 [AppNavigator] Realtime handshakes failed to connect:', err);
+      });
+
+      return () => {
+        console.log('📡 [AppNavigator] User logging out, tearing down realtime handlers...');
+        realtimeChatService.destroy();
+        callService.destroy();
+        NotificationService.destroy();
+        realtimeRideService.cleanupListeners();
+        socketService.disconnect();
+      };
+    }
+  }, [authenticated]);
+
 
   if (!initialized) {
     return <FullScreenLoading />;

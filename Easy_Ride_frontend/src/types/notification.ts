@@ -51,3 +51,9 @@ export interface Notification {
 export interface UnreadNotificationCount {
   count: number;
 }
+
+/**
+ * Ride-specific notification alias.
+ */
+export type RideNotification = Notification;
+

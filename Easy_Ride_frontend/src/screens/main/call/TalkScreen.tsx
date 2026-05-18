@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -7,26 +7,73 @@ import { MainStackParamList } from '../../../navigation/types';
 import { useTheme, spacing } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Driver } from '../../../types';
-
-const MOCK_DRIVER: Driver = {
-  id: 'D1',
-  name: 'Sergio Ramasis',
-  avatar: require('../../../../assets/images/driver_sergio.png'),
-  rating: 4.9,
-  totalReviews: 531,
-  status: 'available',
-};
+import { useAppSelector, useAppDispatch } from '../../../redux/hooks';
+import callService from '../../../services/call.service';
+import { toggleMute, setSpeaker } from '../../../redux/slices/callSlice';
 
 export const TalkScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
-  const driver = MOCK_DRIVER;
+  const dispatch = useAppDispatch();
+
+  // Retrieve active ride & call state from Redux store
+  const activeRide = useAppSelector((state) => state.ride.activeRide);
+  const callState = useAppSelector((state) => state.call);
+
+  const getDriverName = () => {
+    if (activeRide?.rider && typeof activeRide.rider !== 'string') {
+      return activeRide.rider.fullName || 'Sergio Ramasis';
+    }
+    return 'Sergio Ramasis';
+  };
+  const driverName = getDriverName();
+
+  // 1. Dynamic active timer state increments every second
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDuration((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Format seconds as MM:SS
+  const formatDuration = (totalSeconds: number) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // 2. Automatically monitor call status for teardown/navigation transitions
+  useEffect(() => {
+    if (
+      callState.status === 'ended' ||
+      callState.status === 'rejected' ||
+      callState.status === 'failed' ||
+      callState.status === 'idle'
+    ) {
+      console.log('[TalkScreen] Call session terminated status:', callState.status);
+      navigation.goBack();
+    }
+  }, [callState.status, navigation]);
+
+  // 3. User Interaction Actions
+  const handleHangUp = async () => {
+    // Attempt to end the active call record
+    const callId = callState.activeCall?._id || callState.incomingCall?.callId;
+    if (callId) {
+      await callService.endCall(callId);
+    } else {
+      navigation.goBack();
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Back Button (safely triggers hangup or pops back) */}
       <TouchableOpacity 
-        onPress={() => navigation.goBack()} 
+        onPress={handleHangUp} 
         style={styles.backButton}
       >
         <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
@@ -36,34 +83,62 @@ export const TalkScreen = () => {
       <View style={styles.content}>
         <View style={styles.avatarContainer}>
           <Image 
-            source={driver.avatar}
+            source={
+              activeRide?.rider && typeof activeRide.rider !== 'string' && activeRide.rider.profileImage
+                ? { uri: activeRide.rider.profileImage }
+                : require('../../../../assets/images/driver_sergio.png')
+            }
             style={styles.avatar}
           />
         </View>
 
-        <Text style={[styles.name, { color: theme.colors.text }]}>{driver.name}</Text>
-        <Text style={[styles.timer, { color: theme.colors.text }]}>01:23</Text>
+        <Text style={[styles.name, { color: theme.colors.text }]}>{driverName}</Text>
+        <Text style={[styles.timer, { color: theme.colors.text }]}>
+          {formatDuration(duration)}
+        </Text>
+        <Text style={[styles.statusInfo, { color: theme.colors.textSecondary }]}>
+          Active Twilio Voice Room
+        </Text>
       </View>
 
       <View style={styles.footer}>
         <View style={styles.controlsRow}>
-          <TouchableOpacity style={[styles.controlButton, { backgroundColor: '#FFF9E6' }]}>
-            <Ionicons name="volume-high-outline" size={24} color={theme.colors.text} />
+          {/* Mute Toggle Button */}
+          <TouchableOpacity 
+            style={[
+              styles.controlButton, 
+              { backgroundColor: callState.isMuted ? theme.colors.primary : '#FFF9E6' }
+            ]}
+            onPress={() => dispatch(toggleMute())}
+          >
+            <Ionicons 
+              name={callState.isMuted ? "mic-off" : "mic-outline"} 
+              size={24} 
+              color={callState.isMuted ? "white" : theme.colors.text} 
+            />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.controlButton, { backgroundColor: '#FFF9E6' }]}>
-            <Ionicons name="mic-off-outline" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
+
+          {/* Large Red Hang Up Button */}
           <TouchableOpacity 
             style={[styles.callButton, { backgroundColor: theme.colors.danger }]}
-            onPress={() => navigation.goBack()}
+            onPress={handleHangUp}
           >
-            <Ionicons name="call-outline" size={30} color="white" style={{ transform: [{ rotate: '135deg' }] }} />
+            <Ionicons name="call" size={30} color="white" style={styles.hangupIcon} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.controlButton, { backgroundColor: '#FFF9E6' }]}>
-            <Ionicons name="videocam-outline" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.controlButton, { backgroundColor: '#FFF9E6' }]}>
-            <Ionicons name="pause-outline" size={24} color={theme.colors.text} />
+
+          {/* Speaker Toggle Button */}
+          <TouchableOpacity 
+            style={[
+              styles.controlButton, 
+              { backgroundColor: callState.isSpeakerOn ? theme.colors.primary : '#FFF9E6' }
+            ]}
+            onPress={() => dispatch(setSpeaker(!callState.isSpeakerOn))}
+          >
+            <Ionicons 
+              name={callState.isSpeakerOn ? "volume-high" : "volume-medium-outline"} 
+              size={24} 
+              color={callState.isSpeakerOn ? "white" : theme.colors.text} 
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -110,20 +185,28 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   timer: {
-    fontSize: 24,
+    fontSize: 32,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    marginVertical: spacing.xs,
+  },
+  statusInfo: {
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   footer: {
     paddingBottom: 60,
   },
   controlsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     alignItems: 'center',
+    paddingHorizontal: spacing.xl,
   },
   controlButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 55,
+    height: 55,
+    borderRadius: 27.5,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -138,5 +221,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
+  },
+  hangupIcon: {
+    transform: [{ rotate: '135deg' }],
   },
 });

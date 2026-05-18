@@ -22,6 +22,16 @@ const notificationSlice = createSlice({
     setNotifications(state, action: PayloadAction<Notification[]>) {
       state.notifications = action.payload;
     },
+    addNotificationLocal(state, action: PayloadAction<Notification>) {
+      // Avoid duplicate keys
+      const exists = state.notifications.some((n) => n._id === action.payload._id);
+      if (!exists) {
+        state.notifications.unshift(action.payload);
+        if (!action.payload.isRead) {
+          state.unreadCount += 1;
+        }
+      }
+    },
     setUnreadCount(state, action: PayloadAction<number>) {
       state.unreadCount = action.payload;
     },
@@ -56,6 +66,7 @@ const notificationSlice = createSlice({
 
 export const {
   setNotifications,
+  addNotificationLocal,
   setUnreadCount,
   decrementUnreadCount,
   markReadLocal,

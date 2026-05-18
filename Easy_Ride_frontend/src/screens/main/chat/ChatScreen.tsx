@@ -1,26 +1,116 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
-import { useTheme, spacing, radius } from '../../../theme';
+import { useTheme, spacing } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Message } from '../../../types';
-
-const INITIAL_MESSAGES: Message[] = [
-  { id: '1', text: 'Good evening!', sender: 'other', time: '6:30pm' },
-  { id: '2', text: 'Welcome to CarGo Customer Service', sender: 'other', time: '6:30pm' },
-  { id: '3', text: 'Welcome to CarGo Customer Service', sender: 'me', time: '6:30pm' },
-  { id: '4', text: 'Welcome to CarGo Customer Service', sender: 'other', time: '8:35pm' },
-  { id: '5', text: 'Welcome to CarGo Customer service', sender: 'me', time: 'Just now' },
-];
+import { useAppSelector } from '../../../redux/hooks';
+import { useGetMessagesQuery, useSendMessageMutation } from '../../../api/chat.api';
+import { Message } from '../../../types/chat';
+import { SwaggerRider, SwaggerVehicle } from '../../../types';
+import realtimeChatService from '../../../services/realtimeChat.service';
 
 export const ChatScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const [message, setMessage] = useState('');
+  const flatListRef = useRef<FlatList>(null);
+
+  // 1. Retrieve current ride & user details from Redux
+  const activeRide = useAppSelector((state) => state.ride.activeRide);
+  const currentUserId = useAppSelector((state) => state.auth.backendUser?._id) || '';
+  const rideId = activeRide?._id || 'global_support'; // Fallback to a default support ID if no active ride
+
+  // Safely extract populated profile records
+  const driverProfile = activeRide?.rider && typeof activeRide.rider !== 'string'
+    ? (activeRide.rider as SwaggerRider)
+    : null;
+  const driverName = driverProfile?.fullName || 'Driver Support';
+  
+  const vehicleProfile = activeRide?.vehicle && typeof activeRide.vehicle !== 'string'
+    ? (activeRide.vehicle as SwaggerVehicle)
+    : null;
+
+  // 2. Fetch Chat History via RTK Query
+  const { isLoading, refetch } = useGetMessagesQuery(
+    { rideId, limit: 50 },
+    { skip: !rideId }
+  );
+
+  // 3. Listen to realtime message state updates in Redux
+  const activeChatMessages = useAppSelector((state) => state.chat.activeChats[rideId] || []);
+  const typingIndicators = useAppSelector((state) => state.chat.typingIndicators[rideId] || {});
+  
+  // Determine if receiver (driver) is currently typing
+  const isDriverTyping = Object.entries(typingIndicators).some(
+    ([uid, typing]) => uid !== currentUserId && typing
+  );
+
+  // 4. Send Message Mutation hook
+  const [sendMessageMutation, { isLoading: isSending }] = useSendMessageMutation();
+
+  // 5. Manage Chat Entrance and Departure Lifecycle
+  useEffect(() => {
+    if (rideId) {
+      realtimeChatService.enterChat(rideId);
+      refetch(); // Invalidate & pull fresh logs
+    }
+    return () => {
+      if (rideId) {
+        realtimeChatService.leaveChat(rideId);
+      }
+    };
+  }, [rideId]);
+
+  // 6. Auto Scroll to Bottom on message lists mutation
+  useEffect(() => {
+    if (activeChatMessages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 200);
+    }
+  }, [activeChatMessages, isDriverTyping]);
+
+  // 7. Send Message Callback
+  const handleSendMessage = async () => {
+    if (!message.trim() || !rideId) return;
+
+    const contentToSend = message.trim();
+    setMessage(''); // Clear input optimistically
+
+    try {
+      await sendMessageMutation({
+        rideId,
+        content: contentToSend,
+        messageType: 'text',
+      }).unwrap();
+    } catch (err) {
+      console.error('[ChatScreen] Error sending message:', err);
+    }
+  };
+
+  // 8. Typing Handler
+  const handleTextChange = (text: string) => {
+    setMessage(text);
+    if (rideId) {
+      realtimeChatService.handleKeyPress(rideId);
+    }
+  };
+
+  // 9. Format Chat Messages into UI compatible structures
+  const formattedMessages: Message[] = [...activeChatMessages]
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .map((msg) => ({
+      id: msg._id,
+      text: msg.content,
+      sender: msg.sender === currentUserId ? 'me' : 'other',
+      time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: msg.messageType,
+      status: msg.status,
+    }));
 
   const renderItem = ({ item }: { item: Message }) => (
     <View style={[
@@ -29,7 +119,11 @@ export const ChatScreen = () => {
     ]}>
       {item.sender === 'other' && (
         <Image 
-          source={require('../../../../assets/images/user_avatar.png')}
+          source={
+            driverProfile?.profileImage
+              ? { uri: driverProfile.profileImage } 
+              : require('../../../../assets/images/user_avatar.png')
+          }
           style={styles.avatar}
         />
       )}
@@ -42,13 +136,19 @@ export const ChatScreen = () => {
         ]}>
           <Text style={[styles.messageText, { color: theme.colors.text }]}>{item.text}</Text>
         </View>
-        <Text style={[
-          styles.timeText, 
-          { color: theme.colors.textSecondary },
-          item.sender === 'me' ? { textAlign: 'right' } : { textAlign: 'left', marginLeft: item.sender === 'other' ? 0 : 0 }
-        ]}>
-          {item.time}
-        </Text>
+        <View style={styles.metaRow}>
+          <Text style={[styles.timeText, { color: theme.colors.textSecondary }]}>
+            {item.time}
+          </Text>
+          {item.sender === 'me' && (
+            <Ionicons 
+              name={item.status === 'read' ? 'checkmark-done' : 'checkmark'} 
+              size={14} 
+              color={item.status === 'read' ? '#10B981' : theme.colors.textSecondary} 
+              style={styles.statusIcon}
+            />
+          )}
+        </View>
       </View>
     </View>
   );
@@ -61,17 +161,50 @@ export const ChatScreen = () => {
           <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
           <Text style={[styles.backText, { color: theme.colors.text }]}>Back</Text>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Chat</Text>
-        <View style={{ width: 60 }} />
+        <View style={styles.headerCenter}>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            {driverName}
+          </Text>
+          {vehicleProfile && (
+            <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
+              {`${vehicleProfile.brand} ${vehicleProfile.modelName} - ${vehicleProfile.numberPlate}`}
+            </Text>
+          )}
+        </View>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('Calling')} 
+          disabled={!driverProfile}
+          style={[styles.callIconContainer, !driverProfile && { opacity: 0.3 }]}
+        >
+          <Ionicons name="call" size={22} color={theme.colors.primary} />
+        </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={INITIAL_MESSAGES}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+      {/* Main chat history list */}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={formattedMessages}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        />
+      )}
+
+      {/* Typing Indicator Bar */}
+      {isDriverTyping && (
+        <View style={styles.typingContainer}>
+          <Text style={[styles.typingText, { color: theme.colors.textSecondary }]}>
+            {driverName} is typing...
+          </Text>
+        </View>
+      )}
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -87,14 +220,19 @@ export const ChatScreen = () => {
               placeholder="Type your message"
               placeholderTextColor={theme.colors.textSecondary}
               value={message}
-              onChangeText={setMessage}
+              onChangeText={handleTextChange}
+              onSubmitEditing={handleSendMessage}
             />
             <TouchableOpacity>
               <Ionicons name="happy-outline" size={24} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={[styles.sendButton]}>
-             <Ionicons name="paper-plane-outline" size={24} color={theme.colors.textSecondary} />
+          <TouchableOpacity 
+            onPress={handleSendMessage}
+            disabled={!message.trim()} 
+            style={[styles.sendButton, !message.trim() && { opacity: 0.4 }]}
+          >
+             <Ionicons name="paper-plane" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -118,14 +256,35 @@ const styles = StyleSheet.create({
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: 60,
   },
   backText: {
     fontSize: 16,
     marginLeft: 4,
   },
+  headerCenter: {
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  callIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF9E6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContent: {
     padding: spacing.lg,
@@ -166,9 +325,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 4,
+  },
   timeText: {
     fontSize: 10,
-    marginTop: 4,
+  },
+  statusIcon: {
+    marginLeft: 4,
+  },
+  typingContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
+  },
+  typingText: {
+    fontSize: 12,
+    fontStyle: 'italic',
   },
   inputContainer: {
     flexDirection: 'row',

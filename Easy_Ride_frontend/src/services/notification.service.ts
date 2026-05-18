@@ -1,14 +1,18 @@
 import { store } from '../redux/store';
 import { notificationApi } from '../api/notification.api';
 import { UserService } from './user.service';
+import socketService from './socket.service';
 import { 
   setNotifications, 
+  addNotificationLocal,
   setUnreadCount, 
   setNotificationLoading, 
   setNotificationError,
   markReadLocal,
   markAllReadLocal
 } from '../redux/slices/notificationSlice';
+import { Notification } from '../types/notification';
+
 
 /**
  * Notifications Management Service.
@@ -108,6 +112,87 @@ export const NotificationService = {
     } catch (error) {
       console.error('[NotificationService] Token registration infrastructure error:', error);
     }
+  },
+
+  /**
+   * Register Socket.IO listeners to receive push/in-app notifications in realtime.
+   */
+  initialize() {
+    console.log('📡 [NotificationService] Initializing socket handlers...');
+
+    // 1. Listen for new incoming general notifications
+    socketService.on('notification:received', (payload: any) => {
+      console.log('📡 [NotificationService] notification:received event:', payload);
+      this.handleIncomingNotification(payload);
+    });
+
+    socketService.on('notification:new', (payload: any) => {
+      console.log('📡 [NotificationService] notification:new event:', payload);
+      this.handleIncomingNotification(payload);
+    });
+
+    // 2. Listen for ride status updates
+    socketService.on('notification:ride_update', (payload: any) => {
+      console.log('📡 [NotificationService] notification:ride_update event:', payload);
+      this.handleIncomingNotification(payload);
+    });
+  },
+
+  handleIncomingNotification(payload: any) {
+    const formattedNotification: Notification = {
+      _id: payload.notificationId || payload._id || 'notif_' + Date.now(),
+      recipient: store.getState().auth.backendUser?._id || '',
+      recipientType: 'user',
+      title: payload.title || 'Easy Ride Update',
+      body: payload.body || payload.content || '',
+      notificationType: payload.notificationType || 'ride_update',
+      deliveryType: ['in_app'],
+      status: 'delivered',
+      isRead: false,
+      metadata: payload.data || payload.metadata || {},
+      sentAt: new Date().toISOString(),
+      readAt: null,
+      retryCount: 0,
+      createdAt: payload.timestamp || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 1. Inject into getNotifications RTK cache
+    store.dispatch(
+      notificationApi.util.updateQueryData('getNotifications', undefined, (draft) => {
+        if (draft?.data) {
+          const exists = draft.data.some((n) => n._id === formattedNotification._id);
+          if (!exists) {
+            draft.data.unshift(formattedNotification);
+          }
+        } else {
+          draft.data = [formattedNotification];
+        }
+      })
+    );
+
+    // 2. Increment getUnreadCount RTK cache count
+    store.dispatch(
+      notificationApi.util.updateQueryData('getUnreadCount', undefined, (draft) => {
+        if (draft?.data) {
+          draft.data.count = (draft.data.count || 0) + 1;
+        } else {
+          draft.data = { count: 1 };
+        }
+      })
+    );
+
+    // 3. Keep standard slice in sync as fallback
+    store.dispatch(addNotificationLocal(formattedNotification));
+  },
+
+  /**
+   * Cleanup listeners
+   */
+  destroy() {
+    socketService.off('notification:received');
+    socketService.off('notification:new');
+    socketService.off('notification:ride_update');
   }
 };
 
