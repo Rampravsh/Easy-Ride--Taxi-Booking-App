@@ -9,6 +9,8 @@ export interface Car {
   rating: number;
   reviews: number;
   pricePerHour: number;
+  numberPlate?: string;
+  color?: string;
   specifications?: {
     maxPower: string;
     fuelType: string;

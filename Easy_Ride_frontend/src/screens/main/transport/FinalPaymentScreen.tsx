@@ -13,11 +13,14 @@ import { Car, ChargeBreakdown } from '../../../types';
 const MOCK_CAR: Car = {
   id: 'C1',
   name: 'Mustang Shelby GT',
-  type: 'Transport',
+  type: 'cab',
+  category: 'saver',
   image: require('../../../../assets/images/red_mustang.png'),
   rating: 4.9,
   reviews: 531,
   pricePerHour: 200,
+  numberPlate: 'MH-12-AB-1234',
+  color: 'Red',
 };
 
 const MOCK_CHARGES: ChargeBreakdown = {

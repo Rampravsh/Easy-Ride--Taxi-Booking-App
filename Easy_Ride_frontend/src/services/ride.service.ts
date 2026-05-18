@@ -51,6 +51,8 @@ export const RideService = {
         return 'Searching for nearby drivers...';
       case 'accepted':
         return 'Driver is heading your way';
+      case 'arriving':
+        return 'Driver is arriving at pickup';
       case 'arrived':
         return 'Driver has arrived at pickup';
       case 'started':
@@ -73,6 +75,8 @@ export const RideService = {
         return 0.15;
       case 'accepted':
         return 0.4;
+      case 'arriving':
+        return 0.55;
       case 'arrived':
         return 0.65;
       case 'started':

@@ -4,6 +4,7 @@ import authReducer, { logoutThunk } from './slices/authSlice';
 import userReducer from './slices/userSlice';
 import notificationReducer from './slices/notificationSlice';
 import rideReducer from './slices/rideSlice';
+import socketReducer from './slices/socketSlice';
 import { baseApi } from '../api/baseApi';
 import { registerUnauthorizedHandler } from '../api/axios';
 
@@ -17,6 +18,7 @@ export const store = configureStore({
     user: userReducer,
     notification: notificationReducer,
     ride: rideReducer,
+    socket: socketReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>

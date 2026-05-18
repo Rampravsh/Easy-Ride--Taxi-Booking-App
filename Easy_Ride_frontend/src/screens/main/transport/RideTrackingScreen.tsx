@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,27 +12,102 @@ import { RootState } from '../../../redux/store';
 import { useGetRideDetailsQuery } from '../../../api/ride.api';
 import { setActiveRide, resetRideWorkflow } from '../../../redux/slices/rideSlice';
 import { RideService } from '../../../services/ride.service';
+import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
+import { realtimeRideService } from '../../../services/realtimeRide.service';
 
 const { width, height } = Dimensions.get('window');
 
+/**
+ * Calculates distance in meters between two geocoordinates using the Haversine formula.
+ */
+const calculateDistance = (
+  coord1: { latitude: number; longitude: number },
+  coord2: { latitude: number; longitude: number }
+) => {
+  const R = 6371e3; // Earth radius in meters
+  const φ1 = (coord1.latitude * Math.PI) / 180;
+  const φ2 = (coord2.latitude * Math.PI) / 180;
+  const Δφ = ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
+  const Δλ = ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // In meters
+};
+
 export const RideTrackingScreen = () => {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const dispatch = useDispatch();
+  const mapRef = useRef<MapView>(null);
+  const markerRef = useRef<any>(null);
 
-  // Get active ride reference from Redux
+  // Retrieve active ride state and socket connection telemetry from Redux
   const activeRide = useSelector((state: RootState) => state.ride.activeRide);
+  const connectionState = useSelector((state: RootState) => state.socket.connectionState);
+  const socketLatency = useSelector((state: RootState) => state.socket.socketLatency);
+  const riderLiveLocation = useSelector((state: RootState) => state.socket.riderLiveLocation);
+  
+  const [riderCoords, setRiderCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [hasFitInitial, setHasFitInitial] = useState(false);
+  const [etaText, setEtaText] = useState<string>('');
 
-  // Poll ride details dynamically every 3 seconds using built-in RTK Query polling
-  const { data: response, error, isLoading, refetch } = useGetRideDetailsQuery(
+  // Socket.IO Room Lifecycle Orchestration
+  useEffect(() => {
+    if (activeRide?._id) {
+      // Connect and join the ride-specific room on mount
+      realtimeRideService.initialize();
+      realtimeRideService.joinRideRoom(activeRide._id);
+    }
+    return () => {
+      if (activeRide?._id) {
+        // Safely leave room and clear listeners on unmount
+        realtimeRideService.leaveRideRoom(activeRide._id);
+      }
+    };
+  }, [activeRide?._id]);
+
+  // Interpolation and Smooth Live Rider Movement
+  useEffect(() => {
+    if (riderLiveLocation) {
+      const newCoords = {
+        latitude: riderLiveLocation.latitude,
+        longitude: riderLiveLocation.longitude,
+      };
+
+      if (markerRef.current) {
+        // Trigger coordinate transition animation on the map marker
+        markerRef.current.animateMarkerToCoordinate(newCoords, 1500);
+      }
+      setRiderCoords(newCoords);
+    } else if (activeRide?.rider && typeof activeRide.rider === 'object' && activeRide.rider.currentLocation) {
+      // Fallback: Use initial driver coordinates from MongoDB if streaming GPS feed has not arrived yet
+      setRiderCoords({
+        latitude: activeRide.rider.currentLocation.coordinates[1],
+        longitude: activeRide.rider.currentLocation.coordinates[0],
+      });
+    }
+  }, [riderLiveLocation, activeRide]);
+
+  // HIGH AVAILABILITY POLLING FALLBACK RECOVERY:
+  // If the Socket.IO stream is healthy (connected), we slow down polling dramatically to once every 30 seconds
+  // to save cellular data and device battery. If connection fails, we accelerate polling back to rapid
+  // 3-second checks to provide continuous fallback status tracking.
+  const pollingInterval = connectionState === 'connected' ? 30000 : 3000;
+
+  const { data: response, error, isLoading } = useGetRideDetailsQuery(
     activeRide?._id || '',
     {
       skip: !activeRide?._id,
-      pollingInterval: 3000, // Poll every 3 seconds for real-time tracking updates
+      pollingInterval,
     }
   );
 
-  // Sync active ride back to redux store when fetched details change
+  // Sync REST response directly with Ride slice
   useEffect(() => {
     if (response?.data) {
       dispatch(setActiveRide(response.data));
@@ -62,29 +137,132 @@ export const RideTrackingScreen = () => {
   }
 
   const rawRide = response?.data || activeRide;
-
-  // Adapter mapping from backend model to legacy UI expected fields
   const uiRide = RideService.transformRideForUI(rawRide);
   const driver = uiRide.driver;
   const car = uiRide.car;
   const statusLabel = RideService.getStatusLabel(rawRide.status);
-  const progress = RideService.getStatusProgress(rawRide.status);
+  
+  const pickupCoords = rawRide.pickupLocation?.coordinates 
+    ? { latitude: rawRide.pickupLocation.coordinates[1], longitude: rawRide.pickupLocation.coordinates[0] }
+    : null;
+
+  const destCoords = rawRide.dropLocation?.coordinates 
+    ? { latitude: rawRide.dropLocation.coordinates[1], longitude: rawRide.dropLocation.coordinates[0] }
+    : null;
+
+  // Real-time Dynamic ETA Recalculation
+  useEffect(() => {
+    if (riderCoords && pickupCoords && (rawRide.status === 'accepted' || rawRide.status === 'arriving')) {
+      const dist = calculateDistance(riderCoords, pickupCoords);
+      const averageSpeedMps = 8.33; // 30 km/h average speed in city
+      const etaSeconds = Math.round(dist / averageSpeedMps);
+      const mins = Math.max(1, Math.round(etaSeconds / 60));
+      setEtaText(`${mins} mins`);
+    } else {
+      setEtaText(uiRide.duration);
+    }
+  }, [riderCoords, pickupCoords, rawRide.status, uiRide.duration]);
+
+  // Adjust Viewport to fit all journey markers initially on mount
+  useEffect(() => {
+    if (hasFitInitial || !mapRef.current) return;
+    
+    const coordsToFit = [];
+    if (pickupCoords) coordsToFit.push(pickupCoords);
+    if (destCoords) coordsToFit.push(destCoords);
+    if (riderCoords) coordsToFit.push(riderCoords);
+    
+    if (coordsToFit.length >= 2) {
+      mapRef.current.fitToCoordinates(coordsToFit, {
+        edgePadding: { top: 120, right: 80, bottom: 120, left: 80 },
+        animated: true,
+      });
+      setHasFitInitial(true);
+    }
+  }, [riderCoords, pickupCoords, destCoords, hasFitInitial]);
 
   const handleReturnHome = () => {
     dispatch(resetRideWorkflow());
     navigation.navigate('Home' as any);
   };
 
+  const mapRegion = {
+    latitude: riderCoords?.latitude || pickupCoords?.latitude || 37.78825,
+    longitude: riderCoords?.longitude || pickupCoords?.longitude || -122.4324,
+    latitudeDelta: 0.03,
+    longitudeDelta: 0.015,
+  };
+
+  const darkMapStyle = [
+    { "elementType": "geometry", "stylers": [{ "color": "#212121" }] },
+    { "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+    { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#2c2c2c" }] },
+    { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#000000" }] }
+  ];
+
   return (
     <View style={styles.container}>
-      {/* Map Background */}
-      <Image 
-        source={require('../../../../assets/images/map_placeholder.png')}
+      {/* Real-time Google Maps Viewport */}
+      <MapView
+        ref={mapRef}
+        provider={PROVIDER_GOOGLE}
         style={styles.map}
-        resizeMode="cover"
-      />
+        initialRegion={mapRegion}
+        customMapStyle={isDark ? darkMapStyle : []}
+      >
+        {pickupCoords && (
+          <Marker
+            coordinate={pickupCoords}
+            title="Pickup Address"
+            pinColor={theme.colors.primary}
+          />
+        )}
+        
+        {destCoords && (
+          <Marker
+            coordinate={destCoords}
+            title="Destination Address"
+            pinColor="#FF5252"
+          />
+        )}
 
-      {/* Header Buttons */}
+        {/* Live Driver Vehicle Marker with interpolation and heading rotation */}
+        {riderCoords && (
+          <Marker
+            ref={markerRef}
+            coordinate={riderCoords}
+            title={driver.name}
+            description="Live rider tracking"
+            flat
+            anchor={{ x: 0.5, y: 0.5 }}
+            rotation={riderLiveLocation?.heading || 0}
+          >
+            <View style={[styles.driverMarkerContainer, { borderColor: theme.colors.primary }]}>
+              <Ionicons name="car" size={24} color="#000" />
+            </View>
+          </Marker>
+        )}
+
+        {/* Dynamic Route Synchronization lines */}
+        {pickupCoords && destCoords && rawRide.status === 'started' && (
+          <Polyline
+            coordinates={[pickupCoords, destCoords]}
+            strokeColor={theme.colors.primary}
+            strokeWidth={4.5}
+          />
+        )}
+
+        {riderCoords && pickupCoords && (rawRide.status === 'accepted' || rawRide.status === 'arriving') && (
+          <Polyline
+            coordinates={[riderCoords, pickupCoords]}
+            strokeColor="#1E90FF"
+            strokeWidth={4.5}
+            lineDashPattern={[6, 4]}
+          />
+        )}
+      </MapView>
+
+      {/* Top Floating Header */}
       <SafeAreaView style={styles.header}>
         <TouchableOpacity 
           style={[styles.iconButton, { backgroundColor: theme.colors.primary }]}
@@ -98,13 +276,32 @@ export const RideTrackingScreen = () => {
         </View>
       </SafeAreaView>
 
-      {/* Car on Map - Progress-based Visual Indicator */}
-      <View style={[styles.carMarkerContainer, { top: height * (0.45 - progress * 0.25) }]}>
-         <View style={[styles.routeLine, { backgroundColor: theme.colors.primary, height: 100 * (1 - progress) }]} />
-         <Ionicons name="car" size={32} color={theme.colors.primary} style={styles.carIcon} />
-      </View>
+      {/* Reconnect Banner and Quality Indicators */}
+      {connectionState !== 'connected' && (
+        <View style={[
+          styles.statusBanner, 
+          { backgroundColor: connectionState === 'reconnecting' ? '#FFF3CD' : '#F8D7DA' }
+        ]}>
+          <ActivityIndicator size="small" color={connectionState === 'reconnecting' ? '#856404' : '#721C24'} />
+          <Text style={[
+            styles.statusBannerText, 
+            { color: connectionState === 'reconnecting' ? '#856404' : '#721C24' }
+          ]}>
+            {connectionState === 'reconnecting' 
+              ? 'Connecting to live tracking...' 
+              : 'Connection lost. Resilient fallback polling active.'}
+          </Text>
+        </View>
+      )}
 
-      {/* Bottom Tracking Sheet */}
+      {connectionState === 'connected' && (
+        <View style={styles.connectedBadge}>
+          <View style={styles.greenPulse} />
+          <Text style={styles.connectedBadgeText}>Realtime Live ({socketLatency}ms)</Text>
+        </View>
+      )}
+
+      {/* Bottom Tracking Info Sheet */}
       <View style={[styles.bottomSheet, { backgroundColor: theme.colors.background }]}>
         <View style={styles.handle} />
         
@@ -120,7 +317,7 @@ export const RideTrackingScreen = () => {
         </View>
 
         <Text style={[styles.durationText, { color: theme.colors.textSecondary }]}>
-          Estimated Duration: <Text style={{ color: theme.colors.text, fontWeight: '700' }}>{uiRide.duration}</Text>
+          Estimated Duration: <Text style={{ color: theme.colors.text, fontWeight: '700' }}>{etaText}</Text>
         </Text>
 
         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -208,7 +405,7 @@ export const RideTrackingScreen = () => {
               <Ionicons name="chatbubble" size={24} color={theme.colors.primary} />
             </TouchableOpacity>
             
-            {rawRide.status === 'searching' || rawRide.status === 'accepted' ? (
+            {rawRide.status === 'searching' || rawRide.status === 'accepted' || rawRide.status === 'arriving' ? (
               <TouchableOpacity 
                 style={[styles.cancelButton, { backgroundColor: theme.colors.primary }]}
                 onPress={() => navigation.navigate('CancelRide')}
@@ -233,8 +430,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   map: {
-    width: width,
-    height: height * 0.5,
+    ...StyleSheet.absoluteFillObject,
+    height: height * 0.58,
   },
   header: {
     position: 'absolute',
@@ -278,18 +475,66 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
   },
-  carMarkerContainer: {
+  statusBanner: {
     position: 'absolute',
-    left: width * 0.45,
+    top: 100,
+    left: spacing.lg,
+    right: spacing.lg,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    zIndex: 11,
+    gap: 8,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  routeLine: {
-    width: 4,
-    borderRadius: 2,
-    opacity: 0.8,
+  statusBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
-  carIcon: {
-    marginTop: -10,
+  connectedBadge: {
+    position: 'absolute',
+    top: 100,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    zIndex: 11,
+    gap: 6,
+  },
+  greenPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+  },
+  connectedBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  driverMarkerContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2.5,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   bottomSheet: {
     position: 'absolute',
