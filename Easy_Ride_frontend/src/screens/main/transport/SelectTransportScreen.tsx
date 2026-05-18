@@ -35,10 +35,10 @@ interface TransportType {
 }
 
 const TRANSPORT_TYPES: TransportType[] = [
-  { id: 'car', name: 'Car Cab', icon: 'car', color: '#FF5252', type: 'cab', category: 'saver' },
-  { id: 'bike', name: 'Bike Ride', icon: 'motorbike', color: '#448AFF', type: 'bike', category: 'saver' },
-  { id: 'taxi', name: 'Premium Taxi', icon: 'taxi', color: '#FFD700', type: 'cab', category: 'premium' },
-  { id: 'auto', name: 'Easy Auto', icon: 'tricycle', color: '#4CAF50', type: 'auto', category: 'saver' },
+  { id: 'car', name: 'Car Cab', icon: 'car', color: '#FF5252', type: 'car', category: 'economy' },
+  { id: 'bike', name: 'Bike Ride', icon: 'motorbike', color: '#448AFF', type: 'bike', category: 'economy' },
+  { id: 'taxi', name: 'Premium Taxi', icon: 'taxi', color: '#FFD700', type: 'car', category: 'premium' },
+  { id: 'auto', name: 'Easy Auto', icon: 'moped', color: '#4CAF50', type: 'auto', category: 'economy' },
 ];
 
 export const SelectTransportScreen = () => {

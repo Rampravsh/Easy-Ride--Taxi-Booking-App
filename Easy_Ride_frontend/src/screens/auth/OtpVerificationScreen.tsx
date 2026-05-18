@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,7 +12,7 @@ export const OtpVerificationScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList, 'OtpVerification'>>();
   const route = useRoute<RouteProp<AuthStackParamList, 'OtpVerification'>>();
-  const { type, value, nextScreen } = route.params;
+  const { type, value, nextScreen, signUpData, otpCode } = (route.params || {}) as any;
 
   const [otp, setOtp] = useState(['', '', '', '', '']);
 
@@ -20,7 +20,21 @@ export const OtpVerificationScreen = () => {
     const newOtp = [...otp];
     newOtp[index] = text;
     setOtp(newOtp);
-    // Logic to move focus would go here in a full implementation
+  };
+
+  const handleVerify = () => {
+    const enteredOtp = otp.join('');
+    
+    // If a dynamic OTP code has been dispatched to user's screen/logs, enforce standard security challenge matching
+    if (otpCode && enteredOtp !== otpCode) {
+      Alert.alert(
+        'Verification Challenge Failed',
+        'The security verification code you entered is invalid. Please double check your code and try again.'
+      );
+      return;
+    }
+
+    navigation.navigate(nextScreen as any, { isNew: true, signUpData } as any);
   };
 
   return (
@@ -58,7 +72,14 @@ export const OtpVerificationScreen = () => {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.resendContainer}>
+        <TouchableOpacity 
+          style={styles.resendContainer}
+          onPress={() => {
+            if (otpCode) {
+              Alert.alert('Verification Code Resent', `Your new secure OTP verification code is: ${otpCode}`);
+            }
+          }}
+        >
           <Text style={[styles.resendText, { color: theme.colors.textSecondary }]}>
             Didn't receive code? <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>Resend again</Text>
           </Text>
@@ -67,7 +88,7 @@ export const OtpVerificationScreen = () => {
         <View style={styles.footer}>
           <AppButton 
             title="Verify" 
-            onPress={() => navigation.navigate(nextScreen as any, { isNew: true })} 
+            onPress={handleVerify} 
           />
         </View>
       </View>

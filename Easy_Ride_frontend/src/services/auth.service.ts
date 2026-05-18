@@ -58,6 +58,9 @@ export const AuthService = {
         return null;
       }
 
+      // Wait for Firebase to initialize its auth state
+      await FirebaseService.waitForAuthInit();
+
       // Check if Firebase session is intact
       const firebaseToken = await FirebaseService.getIdToken(false);
       if (!firebaseToken) {

@@ -18,11 +18,24 @@ export const rideApi = baseApi.injectEndpoints({
      * POST /rides/estimate
      */
     getRideEstimate: builder.mutation<ApiResponse<RideEstimateResponse>, RideEstimateRequest>({
-      query: (payload) => ({
-        url: '/rides/estimate',
-        method: 'POST',
-        data: payload,
-      }),
+      query: (payload) => {
+        const mappedType = payload.rideType === 'cab' ? 'car' : payload.rideType;
+        let mappedCategory = payload.rideCategory;
+        if (payload.rideCategory === 'saver') {
+          mappedCategory = 'economy';
+        } else if (payload.rideCategory === 'luxury') {
+          mappedCategory = 'premium';
+        }
+        return {
+          url: '/rides/estimate',
+          method: 'POST',
+          data: {
+            ...payload,
+            rideType: mappedType,
+            rideCategory: mappedCategory,
+          },
+        };
+      },
     }),
 
     /**
@@ -30,11 +43,24 @@ export const rideApi = baseApi.injectEndpoints({
      * POST /rides/book
      */
     bookRide: builder.mutation<ApiResponse<Ride>, RideBookingPayload>({
-      query: (payload) => ({
-        url: '/rides/book',
-        method: 'POST',
-        data: payload,
-      }),
+      query: (payload) => {
+        const mappedType = payload.rideType === 'cab' ? 'car' : payload.rideType;
+        let mappedCategory = payload.rideCategory;
+        if (payload.rideCategory === 'saver') {
+          mappedCategory = 'economy';
+        } else if (payload.rideCategory === 'luxury') {
+          mappedCategory = 'premium';
+        }
+        return {
+          url: '/rides/book',
+          method: 'POST',
+          data: {
+            ...payload,
+            rideType: mappedType,
+            rideCategory: mappedCategory,
+          },
+        };
+      },
       invalidatesTags: ['Rides'],
     }),
 

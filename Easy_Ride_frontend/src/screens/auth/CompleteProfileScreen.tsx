@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { useTheme, spacing, radius } from '../../theme';
@@ -10,15 +10,25 @@ import { AppInput } from '../../components/AppInput';
 import { AuthHeader } from '../../components/AuthHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { useUpdateUserProfileMutation } from '../../api/user.api';
+import { useAppDispatch } from '../../redux/hooks';
+import { setBackendUser, setFirebaseToken, setFirebaseUser } from '../../redux/slices/authSlice';
+import { FirebaseService, firebaseAuth } from '../../services/firebase.service';
+import { StorageService } from '../../services/storage.service';
+import { STORAGE_KEYS } from '../../constants/api.constants';
 
 export const CompleteProfileScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList, 'CompleteProfile'>>();
+  const route = useRoute<RouteProp<AuthStackParamList, 'CompleteProfile'>>();
+  const dispatch = useAppDispatch();
 
-  // Form states
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  // Extract forwarded signUpData from route parameters
+  const { signUpData } = (route.params || {}) as any;
+
+  // Form states with default fallbacks to forwarded registration details
+  const [fullName, setFullName] = useState(signUpData?.fullName || '');
+  const [phone, setPhone] = useState(signUpData?.phone || '');
+  const [email, setEmail] = useState(signUpData?.email || '');
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
   
@@ -53,7 +63,21 @@ export const CompleteProfileScreen = () => {
         email: email.trim() || null,
       }).unwrap();
 
-      if (response.success) {
+      if (response.success && response.data) {
+        // Fetch current active Firebase user and fresh ID token
+        const firebaseUser = firebaseAuth.currentUser;
+        const token = await FirebaseService.getIdToken(false);
+
+        // Persistent cache storage update
+        await StorageService.setItem(STORAGE_KEYS.BACKEND_USER, response.data);
+
+        // Update Redux state to trigger automatic transition to Main Dashboard
+        if (firebaseUser) {
+          dispatch(setFirebaseUser(firebaseUser));
+        }
+        dispatch(setFirebaseToken(token));
+        dispatch(setBackendUser(response.data as any));
+
         // Optimistically navigate user to congratulations screen on database success
         navigation.navigate('Congratulations', {
           title: 'Congratulations!',

@@ -1,6 +1,9 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
   initializeAuth,
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signInWithCredential, 
   GoogleAuthProvider, 
   PhoneAuthProvider, 
@@ -17,9 +20,17 @@ import { ENV } from '../constants/env';
 
 // Initialize Firebase App
 const app = getApps().length === 0 ? initializeApp(ENV.FIREBASE_CONFIG) : getApp();
-export const firebaseAuth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+
+let auth;
+try {
+  auth = getAuth(app);
+} catch (error) {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+}
+
+export const firebaseAuth = auth;
 
 /**
  * Enterprise Firebase Integration Service.
@@ -31,6 +42,35 @@ export const FirebaseService = {
    */
   onAuthStateChanged(callback: (user: FirebaseUser | null) => void) {
     return onAuthStateChanged(firebaseAuth, callback);
+  },
+
+  waitForAuthInit(): Promise<FirebaseUser | null> {
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+        unsubscribe();
+        resolve(user);
+      });
+    });
+  },
+
+  async signUpWithEmailAndPassword(email: string, password: string): Promise<FirebaseUser> {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+      return userCredential.user;
+    } catch (error) {
+      console.error('[FirebaseService] Email/Password registration failed:', error);
+      throw error;
+    }
+  },
+
+  async signInWithEmailAndPassword(email: string, password: string): Promise<FirebaseUser> {
+    try {
+      const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
+      return userCredential.user;
+    } catch (error) {
+      console.error('[FirebaseService] Email/Password login failed:', error);
+      throw error;
+    }
   },
 
   /**

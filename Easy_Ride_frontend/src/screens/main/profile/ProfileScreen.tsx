@@ -90,11 +90,19 @@ export const ProfileScreen = () => {
     }
 
     try {
-      const res = await updateProfile({
-        fullName,
-        email: email.trim() || null,
-        phone: phone.trim() || null,
-      }).unwrap();
+      const payload: any = { fullName: fullName.trim() };
+      
+      const trimmedEmail = email.trim();
+      if (trimmedEmail) {
+        payload.email = trimmedEmail;
+      }
+      
+      const trimmedPhone = phone.trim();
+      if (trimmedPhone) {
+        payload.phone = trimmedPhone;
+      }
+
+      const res = await updateProfile(payload).unwrap();
 
       if (res.success) {
         Alert.alert('Success', 'Profile updated successfully!');

@@ -1,13 +1,83 @@
+import * as Location from 'expo-location';
 import { GeoCoordinates } from '../types/user';
 
 export const LocationService = {
   /**
-   * Mock Geocoding: Translates a human-readable address to geocoordinates [longitude, latitude].
-   * Mimics network latency and matches mock locations dynamically.
+   * Request location permissions and get the current real coordinates from device GPS
+   */
+  async getCurrentLocation(): Promise<{ address: string; coordinates: GeoCoordinates }> {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        throw new Error('Location permission denied');
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const { longitude, latitude } = location.coords;
+      const coordinates: GeoCoordinates = [longitude, latitude];
+
+      // Reverse geocode to get a human-readable address
+      let address = 'Current Location';
+      try {
+        const reverseGeocode = await Location.reverseGeocodeAsync({
+          latitude,
+          longitude,
+        });
+
+        if (reverseGeocode && reverseGeocode.length > 0) {
+          const first = reverseGeocode[0];
+          const parts = [
+            first.streetNumber,
+            first.street,
+            first.district,
+            first.city,
+            first.region,
+            first.country,
+          ].filter(Boolean);
+          address = parts.join(', ');
+        }
+      } catch (geocodeErr) {
+        console.warn('[LocationService] Reverse geocode failed, using lat/lng fallback:', geocodeErr);
+        address = `Location [${longitude.toFixed(4)}, ${latitude.toFixed(4)}]`;
+      }
+
+      return {
+        address,
+        coordinates,
+      };
+    } catch (error) {
+      console.warn('[LocationService] Failed to get real current location, falling back to mock:', error);
+      // Fallback: Return standard default center in San Francisco
+      return {
+        address: 'Current Location (SF Pacific Heights)',
+        coordinates: [-122.4324, 37.7882],
+      };
+    }
+  },
+
+  /**
+   * Translates a human-readable address to geocoordinates [longitude, latitude].
+   * Integrates real expo-location geocoding with a bulletproof mock fallback.
    */
   async geocodeAddress(address: string): Promise<{ address: string; coordinates: GeoCoordinates }> {
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    try {
+      // Try real geocoding first
+      const results = await Location.geocodeAsync(address);
+      if (results && results.length > 0) {
+        const { longitude, latitude } = results[0];
+        return {
+          address,
+          coordinates: [longitude, latitude],
+        };
+      }
+    } catch (error) {
+      console.warn('[LocationService] Real geocoding failed, trying mock offsets:', error);
+    }
 
+    // Smart Mock Offset Fallback
     const lowercaseAddr = address.toLowerCase();
     let coordinates: GeoCoordinates = [-122.4324, 37.7882]; // Default: San Francisco center
 
@@ -36,11 +106,30 @@ export const LocationService = {
   },
 
   /**
-   * Mock Reverse Geocoding: Translates coordinates back into an address.
+   * Translates coordinates back into an address.
    */
   async reverseGeocode(coordinates: GeoCoordinates): Promise<string> {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    return `Location near SF [${coordinates[0].toFixed(4)}, ${coordinates[1].toFixed(4)}]`;
+    try {
+      const reverseGeocode = await Location.reverseGeocodeAsync({
+        longitude: coordinates[0],
+        latitude: coordinates[1],
+      });
+      if (reverseGeocode && reverseGeocode.length > 0) {
+        const first = reverseGeocode[0];
+        const parts = [
+          first.streetNumber,
+          first.street,
+          first.district,
+          first.city,
+          first.region,
+          first.country,
+        ].filter(Boolean);
+        return parts.join(', ');
+      }
+    } catch (error) {
+      console.warn('[LocationService] Real reverse geocoding failed:', error);
+    }
+    return `Location near [${coordinates[0].toFixed(4)}, ${coordinates[1].toFixed(4)}]`;
   },
 
   /**

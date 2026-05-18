@@ -12,7 +12,12 @@ export const StorageService = {
     try {
       const data = await AsyncStorage.getItem(key);
       if (!data) return null;
-      return JSON.parse(data) as T;
+      try {
+        return JSON.parse(data) as T;
+      } catch {
+        // Fallback: If value is not a valid JSON string (e.g. raw JWT token string), return it directly
+        return data as unknown as T;
+      }
     } catch (error) {
       console.error(`[StorageService] Error reading key "${key}":`, error);
       return null;

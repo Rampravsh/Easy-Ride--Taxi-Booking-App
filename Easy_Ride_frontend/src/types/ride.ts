@@ -1,8 +1,8 @@
 import { GeoCoordinates, GeoLocationPoint } from './user';
 
 export type RideStatus = 'searching' | 'accepted' | 'arriving' | 'arrived' | 'started' | 'completed' | 'cancelled';
-export type VehicleCategory = 'saver' | 'premium' | 'luxury';
-export type RideType = 'bike' | 'auto' | 'cab';
+export type VehicleCategory = 'economy' | 'comfort' | 'premium' | 'pool' | 'saver' | 'luxury';
+export type RideType = 'bike' | 'car' | 'auto' | 'luxury' | 'cab';
 
 export interface FareBreakdown {
   baseFare: number;
