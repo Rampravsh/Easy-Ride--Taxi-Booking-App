@@ -1,72 +1,109 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
-import { useTheme, spacing, radius } from '../../../theme';
+import { useTheme, spacing } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useGetMyTransactionsQuery } from '../../../api/transaction.api';
+import { paymentService } from '../../../services/payment.service';
+import { Transaction } from '../../../types';
 
 type HistoryType = 'Upcoming' | 'Completed' | 'Cancelled';
-
-const HISTORY_DATA: Record<HistoryType, any[]> = {
-  Upcoming: [
-    { id: '1', name: 'Nate', car: 'Mustang Shelby GT', time: 'Today at 09:20 am' },
-    { id: '2', name: 'Henry', car: 'Mustang Shelby GT', time: 'Today at 10:20 am' },
-    { id: '3', name: 'William', car: 'Mustang Shelby GT', time: 'Tomorrow at 09:20 am' },
-    { id: '4', name: 'Nate', car: 'Mustang Shelby GT', time: 'Today at 09:20 am' },
-    { id: '5', name: 'Henry', car: 'Mustang Shelby GT', time: 'Today at 10:20 am' },
-    { id: '6', name: 'William', car: 'Mustang Shelby GT', time: 'Tomorrow at 09:20 am' },
-    { id: '7', name: 'Henry', car: 'Mustang Shelby GT', time: 'Today at 10:20 am' },
-    { id: '8', name: 'William', car: 'Mustang Shelby GT', time: 'Tomorrow at 09:20 am' },
-  ],
-  Completed: [
-    { id: '1', name: 'Nate', car: 'Mustang Shelby GT', status: 'Done' },
-    { id: '2', name: 'Henry', car: 'Mustang Shelby GT', status: 'Done' },
-    { id: '3', name: 'William', car: 'Mustang Shelby GT', status: 'Done' },
-    { id: '4', name: 'Nate', car: 'Mustang Shelby GT', status: 'Done' },
-    { id: '5', name: 'Henry', car: 'Mustang Shelby GT', status: 'Done' },
-    { id: '6', name: 'William', car: 'Mustang Shelby GT', status: 'Done' },
-    { id: '7', name: 'Henry', car: 'Mustang Shelby GT', status: 'Done' },
-    { id: '8', name: 'William', car: 'Mustang Shelby GT', status: 'Done' },
-  ],
-  Cancelled: [
-    { id: '1', name: 'Nate', car: 'Mustang Shelby GT', status: 'Cancel' },
-    { id: '2', name: 'Henry', car: 'Mustang Shelby GT', status: 'Cancel' },
-    { id: '3', name: 'William', car: 'Mustang Shelby GT', status: 'Cancel' },
-    { id: '4', name: 'Nate', car: 'Mustang Shelby GT', status: 'Cancel' },
-    { id: '5', name: 'Henry', car: 'Mustang Shelby GT', status: 'Cancel' },
-    { id: '6', name: 'William', car: 'Mustang Shelby GT', status: 'Cancel' },
-    { id: '7', name: 'Henry', car: 'Mustang Shelby GT', status: 'Cancel' },
-    { id: '8', name: 'William', car: 'Mustang Shelby GT', status: 'Cancel' },
-  ],
-};
 
 export const HistoryScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
-  const [activeTab, setActiveTab] = useState<HistoryType>('Upcoming');
+  const [activeTab, setActiveTab] = useState<HistoryType>('Completed');
+  const [refreshing, setRefreshing] = useState(false);
 
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={[styles.card, { backgroundColor: theme.colors.background, borderColor: theme.colors.primary + '33' }]}>
-      <View style={styles.cardMain}>
-        <Text style={[styles.name, { color: theme.colors.text }]}>{item.name}</Text>
-        <Text style={[styles.car, { color: theme.colors.textSecondary }]}>{item.car}</Text>
-      </View>
-      <View style={styles.cardStatus}>
-        {activeTab === 'Upcoming' ? (
-          <Text style={[styles.time, { color: theme.colors.text }]}>{item.time}</Text>
-        ) : (
+  // Fetch real past transactions linked to rides and top-ups from the backend
+  const { data: txData, isLoading, refetch } = useGetMyTransactionsQuery({ page: 1, limit: 50 });
+
+  const transactions = txData?.data || [];
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  const getFilteredData = () => {
+    if (activeTab === 'Upcoming') {
+      return []; // Upcoming schedules fallback
+    }
+
+    if (activeTab === 'Completed') {
+      // Filter transactions related to completed ride payments
+      return transactions.filter(tx => tx.transactionCategory === 'ride_payment');
+    }
+
+    if (activeTab === 'Cancelled') {
+      // Filter transactions related to cancellation refunds
+      return transactions.filter(tx => tx.transactionCategory === 'cancellation_refund');
+    }
+
+    return [];
+  };
+
+  const formatTxDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const renderItem = ({ item }: { item: Transaction }) => {
+    const amountFormatted = paymentService.formatCurrency(item.amount, item.currency || 'INR');
+    
+    let displayName = 'Completed Ride';
+    let subtitle = item.description || 'Easy Ride Trip Settle';
+    let statusText = 'Done';
+    let iconName: any = 'car-sport-outline';
+
+    if (activeTab === 'Cancelled') {
+      displayName = 'Cancelled Ride';
+      subtitle = item.description || 'Trip Cancellation Settle';
+      statusText = 'Refunded';
+      iconName = 'close-circle-outline';
+    }
+
+    return (
+      <View style={[styles.card, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+        <View style={[styles.iconContainer, { backgroundColor: activeTab === 'Cancelled' ? '#FFEDED' : '#E6F9F0' }]}>
+          <Ionicons 
+            name={iconName} 
+            size={22} 
+            color={activeTab === 'Cancelled' ? theme.colors.danger : theme.colors.success} 
+          />
+        </View>
+        <View style={styles.cardMain}>
+          <Text style={[styles.name, { color: theme.colors.text }]}>{displayName}</Text>
+          <Text style={[styles.car, { color: theme.colors.textSecondary }]}>{subtitle}</Text>
+          <Text style={[styles.date, { color: theme.colors.textSecondary }]}>{formatTxDate(item.createdAt)}</Text>
+        </View>
+        <View style={styles.cardStatus}>
+          <Text style={[styles.amountText, { color: theme.colors.text }]}>{amountFormatted}</Text>
           <Text style={[
             styles.status, 
-            { color: activeTab === 'Completed' ? theme.colors.success : theme.colors.danger }
+            { color: activeTab === 'Completed' ? theme.colors.success : theme.colors.textSecondary }
           ]}>
-            {item.status}
+            {statusText}
           </Text>
-        )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
+
+  const filteredList = getFilteredData();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -76,13 +113,13 @@ export const HistoryScreen = () => {
           <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
           <Text style={[styles.backText, { color: theme.colors.text }]}>Back</Text>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>History</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Ride History</Text>
         <View style={{ width: 60 }} />
       </View>
 
       {/* Tabs */}
-      <View style={[styles.tabContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.primary }]}>
-        {(['Upcoming', 'Completed', 'Cancelled'] as HistoryType[]).map((tab) => (
+      <View style={[styles.tabContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+        {(['Completed', 'Cancelled', 'Upcoming'] as HistoryType[]).map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[
@@ -101,13 +138,43 @@ export const HistoryScreen = () => {
         ))}
       </View>
 
-      <FlatList
-        data={HISTORY_DATA[activeTab]}
-        renderItem={renderItem}
-        keyExtractor={item => `${activeTab}-${item.id}`}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoading && !refreshing ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Loading history...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredList}
+          renderItem={renderItem}
+          keyExtractor={item => `${activeTab}-${item._id}`}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons 
+                name={activeTab === 'Upcoming' ? 'calendar-outline' : activeTab === 'Cancelled' ? 'close-circle-outline' : 'car-outline'} 
+                size={60} 
+                color={theme.colors.border} 
+              />
+              <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No rides found</Text>
+              <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
+                {activeTab === 'Upcoming' 
+                  ? "You don't have any upcoming trips scheduled." 
+                  : `You don't have any ${activeTab.toLowerCase()} ride records.`}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -132,13 +199,13 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   tabContainer: {
     flexDirection: 'row',
     marginHorizontal: spacing.lg,
-    marginVertical: spacing.lg,
+    marginVertical: spacing.md,
     borderRadius: 12,
     borderWidth: 1,
     padding: 4,
@@ -150,7 +217,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   list: {
@@ -158,31 +225,75 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     marginBottom: spacing.md,
   },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
   cardMain: {
-    gap: 4,
+    flex: 1,
+    gap: 2,
   },
   name: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   car: {
     fontSize: 12,
+    lineHeight: 16,
+  },
+  date: {
+    fontSize: 10,
+    marginTop: 2,
   },
   cardStatus: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
   },
-  time: {
-    fontSize: 12,
+  amountText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
   status: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xxl,
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 14,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxl * 2,
+    paddingHorizontal: spacing.xl,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

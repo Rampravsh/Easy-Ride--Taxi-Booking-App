@@ -5,6 +5,9 @@ import userReducer from './slices/userSlice';
 import notificationReducer from './slices/notificationSlice';
 import rideReducer from './slices/rideSlice';
 import socketReducer from './slices/socketSlice';
+import walletReducer from './slices/walletSlice';
+import paymentReducer from './slices/paymentSlice';
+import transactionReducer from './slices/transactionSlice';
 import { baseApi } from '../api/baseApi';
 import { registerUnauthorizedHandler } from '../api/axios';
 
@@ -19,6 +22,9 @@ export const store = configureStore({
     notification: notificationReducer,
     ride: rideReducer,
     socket: socketReducer,
+    wallet: walletReducer,
+    payment: paymentReducer,
+    transaction: transactionReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>

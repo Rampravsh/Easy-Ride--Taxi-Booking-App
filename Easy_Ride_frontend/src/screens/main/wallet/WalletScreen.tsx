@@ -1,42 +1,130 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
-import { useTheme, spacing, radius } from '../../../theme';
+import { useTheme, spacing } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
-
-const TRANSACTIONS = [
-  { id: '1', title: 'Walton', date: 'Today at 09:20 am', amount: '-$575.00', type: 'debit', icon: 'remove' },
-  { id: '2', title: 'Nathsom', date: 'Today at 09:20 am', amount: '$575.00', type: 'credit', icon: 'checkmark' },
-  { id: '3', title: 'Walton', date: 'Today at 09:20 am', amount: '-$575.00', type: 'debit', icon: 'remove' },
-  { id: '4', title: 'Nathsom', date: 'Today at 09:20 am', amount: '$575.00', type: 'credit', icon: 'checkmark' },
-  { id: '5', title: 'Nathsom', date: 'Today at 09:20 am', amount: '$575.00', type: 'credit', icon: 'checkmark' },
-];
+import { useGetWalletQuery, useGetWalletTransactionsQuery } from '../../../api/wallet.api';
+import { useDispatch, useSelector } from 'react-redux';
+import { setWallet } from '../../../redux/slices/walletSlice';
+import { RootState } from '../../../redux/store';
+import { paymentService } from '../../../services/payment.service';
+import { Transaction } from '../../../types';
 
 export const WalletScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const dispatch = useDispatch();
 
-  const renderTransaction = ({ item }: { item: typeof TRANSACTIONS[0] }) => (
-    <View style={[styles.transactionCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-      <View style={[styles.transactionIcon, { backgroundColor: item.type === 'debit' ? '#FFEDED' : '#E6F9F0' }]}>
-        <Ionicons 
-          name={item.icon as any} 
-          size={16} 
-          color={item.type === 'debit' ? theme.colors.danger : theme.colors.success} 
-        />
+  const walletState = useSelector((state: RootState) => state.wallet);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch live wallet balance
+  const { data: walletData, isLoading: walletLoading, refetch: refetchWallet } = useGetWalletQuery();
+
+  // Fetch wallet transactions
+  const { data: txData, isLoading: txLoading, refetch: refetchTransactions } = useGetWalletTransactionsQuery({ page: 1, limit: 30 });
+
+  // Sync wallet state to Redux on fetch success
+  useEffect(() => {
+    if (walletData?.success && walletData.data) {
+      dispatch(setWallet(walletData.data));
+    }
+  }, [walletData, dispatch]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetchWallet(), refetchTransactions()]);
+    setRefreshing(false);
+  };
+
+  const formatTxDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const transactions = txData?.data || [];
+  const totalExpend = transactions
+    .filter((tx) => tx.transactionType === 'debit')
+    .reduce((acc, tx) => acc + tx.amount, 0);
+
+  const renderTransaction = ({ item }: { item: Transaction }) => {
+    const isDebit = item.transactionType === 'debit';
+    const amountFormatted = paymentService.formatCurrency(item.amount, item.currency || 'INR');
+    
+    // Determine title / category
+    let title = item.description || 'Wallet Transaction';
+    if (item.transactionCategory === 'wallet_topup') {
+      title = 'Wallet Topup';
+    } else if (item.transactionCategory === 'ride_payment') {
+      title = 'Ride Payment';
+    } else if (item.transactionCategory === 'cancellation_refund') {
+      title = 'Cancellation Refund';
+    }
+
+    return (
+      <View style={[styles.transactionCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+        <View style={[styles.transactionIcon, { backgroundColor: isDebit ? '#FFEDED' : '#E6F9F0' }]}>
+          <Ionicons 
+            name={isDebit ? 'remove' : 'checkmark'} 
+            size={16} 
+            color={isDebit ? theme.colors.danger : theme.colors.success} 
+          />
+        </View>
+        <View style={styles.transactionDetails}>
+          <Text style={[styles.transactionTitle, { color: theme.colors.text }]}>{title}</Text>
+          <Text style={[styles.transactionDate, { color: theme.colors.textSecondary }]}>{formatTxDate(item.createdAt)}</Text>
+        </View>
+        <Text style={[styles.transactionAmount, { color: isDebit ? theme.colors.danger : theme.colors.success }]}>
+          {isDebit ? '-' : '+'}{amountFormatted}
+        </Text>
       </View>
-      <View style={styles.transactionDetails}>
-        <Text style={[styles.transactionTitle, { color: theme.colors.text }]}>{item.title}</Text>
-        <Text style={[styles.transactionDate, { color: theme.colors.textSecondary }]}>{item.date}</Text>
+    );
+  };
+
+  const renderHeaderComponents = () => {
+    const balanceFormatted = paymentService.formatCurrency(walletState.balance, walletState.currency);
+    const expendFormatted = paymentService.formatCurrency(totalExpend, walletState.currency);
+
+    return (
+      <View>
+        {/* Balance & Expend Information */}
+        <View style={styles.balanceRow}>
+          <View style={[styles.balanceCard, { backgroundColor: '#FFF9E6', borderColor: theme.colors.primary }]}>
+             <Text style={[styles.balanceValue, { color: theme.colors.text }]}>{balanceFormatted}</Text>
+             <Text style={[styles.balanceLabel, { color: theme.colors.textSecondary }]}>Available Balance</Text>
+          </View>
+          <View style={[styles.balanceCard, { backgroundColor: '#FFF9E6', borderColor: theme.colors.primary }]}>
+             <Text style={[styles.balanceValue, { color: theme.colors.text }]}>{expendFormatted}</Text>
+             <Text style={[styles.balanceLabel, { color: theme.colors.textSecondary }]}>Total Expend</Text>
+          </View>
+        </View>
+
+        {/* Section Header */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Transactions</Text>
+          {transactions.length > 0 && (
+            <TouchableOpacity onPress={() => navigation.navigate('History')}>
+              <Text style={[styles.seeAll, { color: theme.colors.primary }]}>See All</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
-      <Text style={[styles.transactionAmount, { color: item.type === 'debit' ? theme.colors.text : theme.colors.text }]}>
-        {item.amount}
-      </Text>
-    </View>
-  );
+    );
+  };
+
+  const isScreenLoading = walletLoading && txLoading && !refreshing;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -50,50 +138,47 @@ export const WalletScreen = () => {
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Wallet</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.colors.primary + '33', marginRight: spacing.sm }]}>
-            <Ionicons name="search" size={20} color={theme.colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.colors.primary + '33' }]}>
-            <Ionicons name="notifications" size={20} color={theme.colors.text} />
+          <TouchableOpacity 
+            style={[styles.addMoneyButton, { borderColor: theme.colors.primary }]}
+            onPress={() => navigation.navigate('AddAmount')}
+          >
+            <Text style={[styles.addMoneyText, { color: theme.colors.primary }]}>Add Money</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.topActions}>
-           <View style={{ width: 44 }} />
-           <TouchableOpacity 
-             style={[styles.addMoneyButton, { borderColor: theme.colors.primary }]}
-             onPress={() => navigation.navigate('AddAmount')}
-           >
-             <Text style={[styles.addMoneyText, { color: theme.colors.primary }]}>Add Money</Text>
-           </TouchableOpacity>
+      {isScreenLoading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Loading Wallet Details...</Text>
         </View>
-
-        <View style={styles.balanceRow}>
-          <View style={[styles.balanceCard, { backgroundColor: '#FFF9E6', borderColor: theme.colors.primary }]}>
-             <Text style={[styles.balanceValue, { color: theme.colors.text }]}>$500</Text>
-             <Text style={[styles.balanceLabel, { color: theme.colors.textSecondary }]}>Available Balance</Text>
-          </View>
-          <View style={[styles.balanceCard, { backgroundColor: '#FFF9E6', borderColor: theme.colors.primary }]}>
-             <Text style={[styles.balanceValue, { color: theme.colors.text }]}>$200</Text>
-             <Text style={[styles.balanceLabel, { color: theme.colors.textSecondary }]}>Total Expend</Text>
-          </View>
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Transactions</Text>
-          <TouchableOpacity>
-            <Text style={[styles.seeAll, { color: theme.colors.primary }]}>See All</Text>
-          </TouchableOpacity>
-        </View>
-
-        {TRANSACTIONS.map(item => (
-          <View key={item.id}>
-            {renderTransaction({ item })}
-          </View>
-        ))}
-      </ScrollView>
+      ) : (
+        <FlatList
+          data={transactions}
+          keyExtractor={(item) => item._id}
+          renderItem={renderTransaction}
+          ListHeaderComponent={renderHeaderComponents}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="wallet-outline" size={60} color={theme.colors.border} />
+              <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No transactions yet</Text>
+              <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
+                Add money to top up your wallet balance and ride instantly.
+              </Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -126,20 +211,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
   },
-  topActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
   addMoneyButton: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: 10,
     borderWidth: 1,
   },
   addMoneyText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   balanceRow: {
@@ -155,7 +234,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   balanceValue: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
   },
@@ -205,5 +284,32 @@ const styles = StyleSheet.create({
   transactionAmount: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xxl,
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 14,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxl * 2,
+    paddingHorizontal: spacing.xl,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

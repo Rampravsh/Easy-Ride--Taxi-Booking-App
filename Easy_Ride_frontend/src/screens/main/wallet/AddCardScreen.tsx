@@ -21,7 +21,7 @@ export const AddCardScreen = () => {
           <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
           <Text style={[styles.backText, { color: theme.colors.text }]}>Back</Text>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Amount</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Add Card</Text>
         <View style={{ width: 60 }} />
       </View>
 

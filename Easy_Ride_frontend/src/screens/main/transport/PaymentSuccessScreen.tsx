@@ -1,16 +1,32 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
-import { useTheme, spacing, radius } from '../../../theme';
+import { useTheme, spacing } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../components/AppButton';
+import { paymentService } from '../../../services/payment.service';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../redux/store';
 
 export const PaymentSuccessScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const route = useRoute<RouteProp<MainStackParamList, 'PaymentSuccess'>>();
+  
+  const activeRide = useSelector((state: RootState) => state.ride.activeRide);
+  const { paymentMethod, amount, transactionId } = route.params || { paymentMethod: 'cash', amount: '215', transactionId: '' };
+
+  const formattedAmount = paymentService.formatCurrency(parseFloat(amount), 'INR');
+  const driverName = activeRide && typeof activeRide.rider === 'object' && activeRide.rider ? activeRide.rider.fullName : 'your driver';
+
+  let description = `Your payment of ${formattedAmount} has been sent successfully to ${driverName}.`;
+  if (paymentMethod === 'cash') {
+    description = `Please pay the cash fare of ${formattedAmount} directly to ${driverName}.`;
+  } else if (paymentMethod === 'wallet') {
+    description = `Fare of ${formattedAmount} successfully deducted from your wallet balance.`;
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
@@ -29,23 +45,30 @@ export const PaymentSuccessScreen = () => {
               </View>
            </View>
 
-           <Text style={[styles.title, { color: theme.colors.text }]}>Payment Success</Text>
+           <Text style={[styles.title, { color: theme.colors.text }]}>Payment Completed</Text>
            <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
-             Your money has been successfully sent to Sergio Ramasis
+             {description}
            </Text>
 
            <Text style={[styles.amountLabel, { color: theme.colors.textSecondary }]}>Amount</Text>
-           <Text style={[styles.amountValue, { color: theme.colors.text }]}>$215</Text>
+           <Text style={[styles.amountValue, { color: theme.colors.text }]}>{formattedAmount}</Text>
+
+           {transactionId ? (
+             <View style={styles.txContainer}>
+               <Text style={[styles.txLabel, { color: theme.colors.textSecondary }]}>Transaction ID</Text>
+               <Text style={[styles.txValue, { color: theme.colors.text }]}>{transactionId}</Text>
+             </View>
+           ) : null}
 
            <View style={[styles.divider, { borderStyle: 'dashed', borderColor: theme.colors.border }]} />
 
-           <Text style={[styles.feedbackTitle, { color: theme.colors.text }]}>How is your trip?</Text>
+           <Text style={[styles.feedbackTitle, { color: theme.colors.text }]}>How was your trip?</Text>
            <Text style={[styles.feedbackSub, { color: theme.colors.textSecondary }]}>
-             Your feedback will help us to improve your driving experience better
+             Your feedback helps us provide a premium riding experience for everyone.
            </Text>
 
            <AppButton 
-             title="Please Feedback" 
+             title="Provide Feedback" 
              onPress={() => navigation.navigate('Review')} 
              style={styles.feedbackButton}
            />
@@ -111,7 +134,21 @@ const styles = StyleSheet.create({
   amountValue: {
     fontSize: 32,
     fontWeight: 'bold',
+    marginBottom: spacing.md,
+  },
+  txContainer: {
+    alignItems: 'center',
     marginBottom: spacing.xl,
+  },
+  txLabel: {
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  txValue: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   divider: {
     width: '100%',

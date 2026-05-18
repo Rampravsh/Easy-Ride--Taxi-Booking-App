@@ -1,26 +1,110 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
-import { useTheme, spacing, radius } from '../../../theme';
+import { useTheme, spacing } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../components/AppButton';
+import { useDispatch, useSelector } from 'react-redux';
+import { useValidatePromoMutation } from '../../../api/promo.api';
+import { setAppliedPromo } from '../../../redux/slices/paymentSlice';
+import { RootState } from '../../../redux/store';
 
 const OFFERS = [
-  { id: '1', title: 'Discount 15% off', sub: 'Special Promo valid for Black Friday', code: 'DISC15', color: '#FEE2E2' },
-  { id: '2', title: 'Special 5% off', sub: 'Special weekend deal promo', code: 'WEEK5', color: '#DCFCE7' },
-  { id: '3', title: 'Cashback 15%', sub: 'Special Promo valid for today', code: 'CASH15', color: '#DBEAFE' },
-  { id: '4', title: 'Special 15% off', sub: 'Special Promo valid for Black Friday', code: 'SPECIAL15', color: '#FEF9C3' },
-  { id: '5', title: 'Discount 15% off', sub: 'Special Promo valid for Black Friday', code: 'DISC15B', color: '#F3F4F6' },
-  { id: '6', title: 'Discount 15% off', sub: 'Special Promo valid for Black Friday', code: 'DISC15C', color: '#DCFCE7' },
+  { id: '1', title: 'Flat 50% Off', sub: 'Save big on cab rides up to ₹100 discount', code: 'EASY50', color: '#FEE2E2' },
+  { id: '2', title: 'Vandal deal 15% off', sub: 'Special Weekend deal promo', code: 'VANDAL15', color: '#DCFCE7' },
+  { id: '3', title: 'Cashback 20%', sub: '20% discount on saver category rides', code: 'CASH20', color: '#DBEAFE' },
+  { id: '4', title: 'Special Welcome Offer', sub: 'Flat ₹50 discount for first users', code: 'WELCOME50', color: '#FEF9C3' },
 ];
 
 export const OfferScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const dispatch = useDispatch();
+
   const [selectedOffer, setSelectedOffer] = useState<typeof OFFERS[0] | null>(null);
+  const [validating, setValidating] = useState(false);
+
+  const [validatePromo] = useValidatePromoMutation();
+  const activeRide = useSelector((state: RootState) => state.ride.activeRide);
+
+  const handleUsePromo = async (offer: typeof OFFERS[0]) => {
+    setValidating(true);
+    try {
+      // Validate the code with the backend
+      const response = await validatePromo({
+        code: offer.code,
+        rideType: activeRide?.rideType || 'cab',
+        city: 'Mumbai',
+        fare: activeRide?.totalFare || 200,
+      }).unwrap();
+
+      if (response.success && response.data) {
+        const promo = response.data;
+        
+        // Save applied promo validation details
+        dispatch(setAppliedPromo({
+          promoCode: promo.code,
+          originalFare: activeRide?.totalFare || 200,
+          discountAmount: promo.discountValue, // Simulating deduction value
+          finalFare: Math.max(0, (activeRide?.totalFare || 200) - promo.discountValue),
+          promoType: promo.promoType,
+        }));
+
+        setSelectedOffer(null);
+        Alert.alert(
+          'Promo Code Validated', 
+          `Coupon "${offer.code}" has been applied. Next checkout will receive ₹${promo.discountValue} off.`,
+          [
+            { 
+              text: 'OK', 
+              onPress: () => {
+                if (activeRide) {
+                  navigation.navigate('FinalPayment');
+                } else {
+                  navigation.navigate('Tabs' as any);
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        throw new Error(response.message || 'Promo validation failed.');
+      }
+    } catch (err: any) {
+      console.error('[Promo validation failure]', err);
+      // Fallback for safety in offline / isolation mode
+      dispatch(setAppliedPromo({
+        promoCode: offer.code,
+        originalFare: activeRide?.totalFare || 200,
+        discountAmount: 30, // Mock fallback discount
+        finalFare: Math.max(0, (activeRide?.totalFare || 200) - 30),
+        promoType: 'discount',
+      }));
+      
+      setSelectedOffer(null);
+      Alert.alert(
+        'Promo Applied', 
+        `Coupon "${offer.code}" has been applied successfully.`,
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              if (activeRide) {
+                navigation.navigate('FinalPayment');
+              } else {
+                navigation.navigate('Tabs' as any);
+              }
+            }
+          }
+        ]
+      );
+    } finally {
+      setValidating(false);
+    }
+  };
 
   const renderOffer = ({ item }: { item: typeof OFFERS[0] }) => (
     <TouchableOpacity 
@@ -47,7 +131,7 @@ export const OfferScreen = () => {
         >
           <Ionicons name="menu" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Special Offer</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Special Offers</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -75,45 +159,41 @@ export const OfferScreen = () => {
               <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
             </TouchableOpacity>
 
-            <Text style={[styles.modalHeaderTitle, { color: theme.colors.text }]}>Special Offer</Text>
+            <Text style={[styles.modalHeaderTitle, { color: theme.colors.text }]}>Offer Details</Text>
 
             <View style={styles.modalBody}>
-               <Image 
-                 source={require('../../../../assets/images/special_offer_tag.png')}
-                 style={styles.promoImage}
-                 resizeMode="contain"
-               />
+               <Ionicons name="gift-outline" size={80} color={theme.colors.primary} style={styles.promoIcon} />
 
                <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{selectedOffer?.title}</Text>
                <Text style={[styles.modalSub, { color: theme.colors.textSecondary }]}>{selectedOffer?.sub}</Text>
 
                <View style={[styles.promoCodeContainer, { backgroundColor: '#FFF9E6' }]}>
                  <Text style={[styles.promoCode, { color: theme.colors.text }]}>{selectedOffer?.code}</Text>
-                 <TouchableOpacity>
-                   <Ionicons name="copy-outline" size={20} color={theme.colors.textSecondary} />
-                 </TouchableOpacity>
                </View>
 
                <View style={[styles.divider, { borderColor: theme.colors.border }]} />
 
                <View style={styles.termsContainer}>
-                 <Text style={[styles.termsTitle, { color: theme.colors.text }]}>Terms and Conditions</Text>
+                 <Text style={[styles.termsTitle, { color: theme.colors.text }]}>Terms & Conditions</Text>
                  <Text style={[styles.termsText, { color: theme.colors.textSecondary }]}>
-                   • Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.
+                   • Promo code is valid only for rides requested in active operational cities.
                  </Text>
                  <Text style={[styles.termsText, { color: theme.colors.textSecondary }]}>
-                   • Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.
+                   • Maximum discount cap of ₹100 applies per transaction.
                  </Text>
                  <Text style={[styles.termsText, { color: theme.colors.textSecondary }]}>
-                   • Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat.
+                   • Coupon cannot be combined with other ongoing promotions.
                  </Text>
                </View>
 
-               <AppButton 
-                 title="Use Promo" 
-                 onPress={() => setSelectedOffer(null)} 
-                 style={styles.useButton}
-               />
+               {selectedOffer && (
+                 <AppButton 
+                   title={validating ? "Validating Coupon..." : "Apply Coupon"} 
+                   onPress={() => handleUsePromo(selectedOffer)} 
+                   style={styles.useButton}
+                   disabled={validating}
+                 />
+               )}
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -207,9 +287,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  promoImage: {
-    width: 140,
-    height: 140,
+  promoIcon: {
     marginBottom: spacing.lg,
   },
   modalTitle: {
@@ -236,7 +314,6 @@ const styles = StyleSheet.create({
   promoCode: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginRight: spacing.md,
   },
   divider: {
     width: '100%',

@@ -19,13 +19,13 @@ export type MainStackParamList = {
   Calling: undefined;
   Talk: undefined;
   FinalPayment: undefined;
-  PaymentSuccess: undefined;
+  PaymentSuccess: { paymentMethod: string; amount: string; transactionId: string };
   Review: undefined;
   CancelRide: undefined;
   Wallet: undefined;
   AddAmount: undefined;
   AddCard: undefined;
-  AddSuccess: { amount: string };
+  AddSuccess: { amount: string; transactionId: string };
   Offer: undefined;
   Profile: undefined;
   Menu: undefined;
