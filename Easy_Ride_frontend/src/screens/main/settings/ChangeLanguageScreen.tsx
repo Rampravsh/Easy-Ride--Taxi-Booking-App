@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  FlatList, 
+  ActivityIndicator,
+  Alert 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,15 +15,19 @@ import { MainStackParamList } from '../../../navigation/types';
 import { useTheme, spacing, radius } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../components/AppButton';
+import { 
+  useGetUserProfileQuery, 
+  useUpdateUserPreferencesMutation 
+} from '../../../api/user.api';
 
 const LANGUAGES = [
   { id: 'en', name: 'English', sub: 'English', flag: '🇺🇸' },
-  { id: 'hi', name: 'Hindi', sub: 'Hindi', flag: '🇮🇳' },
-  { id: 'ar', name: 'Arabic', sub: 'Arabic', flag: '🇸🇦' },
-  { id: 'fr', name: 'French', sub: 'French', flag: '🇫🇷' },
-  { id: 'de', name: 'German', sub: 'German', flag: '🇩🇪' },
-  { id: 'pt', name: 'Portuguese', sub: 'Portuguese', flag: '🇵🇹' },
-  { id: 'tr', name: 'Turkish', sub: 'Turkish', flag: '🇹🇷' },
+  { id: 'hi', name: 'Hindi', sub: 'हिन्दी', flag: '🇮🇳' },
+  { id: 'ar', name: 'Arabic', sub: 'العربية', flag: '🇸🇦' },
+  { id: 'fr', name: 'French', sub: 'Français', flag: '🇫🇷' },
+  { id: 'de', name: 'German', sub: 'Deutsch', flag: '🇩🇪' },
+  { id: 'pt', name: 'Portuguese', sub: 'Português', flag: '🇵🇹' },
+  { id: 'tr', name: 'Turkish', sub: 'Türkçe', flag: '🇹🇷' },
   { id: 'nl', name: 'Dutch', sub: 'Nederlands', flag: '🇳🇱' },
 ];
 
@@ -24,13 +36,47 @@ export const ChangeLanguageScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const [selected, setSelected] = useState('en');
 
+  // RTK Query hooks
+  const { data: profileResponse, isLoading } = useGetUserProfileQuery();
+  const [updatePreferences, { isLoading: isSaving }] = useUpdateUserPreferencesMutation();
+
+  const profile = profileResponse?.data;
+
+  // Initialize selected language from backend profile preference
+  useEffect(() => {
+    if (profile?.preferences?.language) {
+      setSelected(profile.preferences.language);
+    }
+  }, [profile]);
+
+  // Save selection
+  const handleSave = async () => {
+    try {
+      const response = await updatePreferences({
+        language: selected,
+      }).unwrap();
+
+      if (response.success) {
+        Alert.alert('Success', 'Language settings updated successfully!');
+        navigation.goBack();
+      }
+    } catch (err: any) {
+      console.error('[ChangeLanguageScreen] Save failed:', err);
+      Alert.alert('Save Failed', err.message || 'Failed to update language.');
+    }
+  };
+
   const renderItem = ({ item }: { item: typeof LANGUAGES[0] }) => (
     <TouchableOpacity 
       style={[
         styles.langItem, 
-        { borderColor: selected === item.id ? theme.colors.primary : theme.colors.border }
+        { 
+          borderColor: selected === item.id ? theme.colors.primary : theme.colors.border,
+          backgroundColor: theme.colors.card 
+        }
       ]}
       onPress={() => setSelected(item.id)}
+      disabled={isSaving}
     >
       <View style={styles.langMain}>
         <Text style={styles.flag}>{item.flag}</Text>
@@ -52,7 +98,11 @@ export const ChangeLanguageScreen = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+          disabled={isSaving}
+        >
           <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
           <Text style={[styles.backText, { color: theme.colors.text }]}>Back</Text>
         </TouchableOpacity>
@@ -60,16 +110,27 @@ export const ChangeLanguageScreen = () => {
         <View style={{ width: 60 }} />
       </View>
 
-      <FlatList
-        data={LANGUAGES}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={LANGUAGES}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
 
       <View style={styles.footer}>
-        <AppButton title="Save" onPress={() => navigation.goBack()} />
+        <AppButton 
+          title="Save Language" 
+          onPress={handleSave} 
+          loading={isSaving}
+          disabled={isLoading || isSaving}
+        />
       </View>
     </SafeAreaView>
   );
@@ -144,5 +205,10 @@ const styles = StyleSheet.create({
   footer: {
     padding: spacing.lg,
     paddingBottom: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

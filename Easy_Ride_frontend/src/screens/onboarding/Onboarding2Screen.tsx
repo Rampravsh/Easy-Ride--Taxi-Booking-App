@@ -13,7 +13,7 @@ export const Onboarding2Screen = () => {
       title="At anytime"
       description="Book your ride instantly at any time of the day."
       onNext={() => navigation.navigate('Onboarding3')}
-      onSkip={() => navigation.navigate('Main' as any)}
+      onSkip={() => navigation.navigate('EnableLocation')}
     />
   );
 };

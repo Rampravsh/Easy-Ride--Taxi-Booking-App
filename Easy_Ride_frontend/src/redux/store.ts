@@ -1,16 +1,20 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import authReducer, { logoutThunk } from './slices/authSlice';
+import userReducer from './slices/userSlice';
+import notificationReducer from './slices/notificationSlice';
 import { baseApi } from '../api/baseApi';
 import { registerUnauthorizedHandler } from '../api/axios';
 
 /**
  * Enterprise Redux Store configuration.
- * Consolidates standard auth reducers and RTK Query API middlewares.
+ * Consolidates standard auth, user profile, notification reducers, and RTK Query API middlewares.
  */
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    user: userReducer,
+    notification: notificationReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -25,6 +29,7 @@ export const store = configureStore({
       },
     }).concat(baseApi.middleware),
 });
+
 
 // Setup listeners for RTK Query refetchOnFocus and refetchOnReconnect capabilities
 setupListeners(store.dispatch);

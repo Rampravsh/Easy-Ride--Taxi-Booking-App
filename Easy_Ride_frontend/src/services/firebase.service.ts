@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
-  getAuth, 
+  initializeAuth,
   signInWithCredential, 
   GoogleAuthProvider, 
   PhoneAuthProvider, 
@@ -10,11 +10,16 @@ import {
   User as FirebaseUser,
   RecaptchaVerifier
 } from 'firebase/auth';
+// @ts-ignore
+import { getReactNativePersistence } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV } from '../constants/env';
 
 // Initialize Firebase App
 const app = getApps().length === 0 ? initializeApp(ENV.FIREBASE_CONFIG) : getApp();
-export const firebaseAuth = getAuth(app);
+export const firebaseAuth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});
 
 /**
  * Enterprise Firebase Integration Service.
