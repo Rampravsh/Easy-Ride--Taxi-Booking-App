@@ -30,7 +30,7 @@ export const PhoneAuthScreen = () => {
   const { theme, isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList, 'PhoneAuth'>>();
 
-  const [countryCode, setCountryCode] = useState('+1');
+  const [countryCode, setCountryCode] = useState('+91');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -68,7 +68,24 @@ export const PhoneAuthScreen = () => {
     
     setError(null);
     setLoading(true);
-    const fullNumber = `${countryCode}${phoneNumber.replace(/\s+/g, '')}`;
+    
+    // Smart normalization logic:
+    // 1. Remove all spaces and non-digit characters
+    let cleanPhone = phoneNumber.replace(/\s+/g, '').replace(/\D/g, '');
+    
+    // 2. Strip redundant country prefixes if already entered by the user in the input box
+    if (countryCode === '+91' && cleanPhone.startsWith('91') && cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.substring(2);
+    } else if (countryCode === '+1' && cleanPhone.startsWith('1') && cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+    
+    // 3. Strip any leading zero (e.g. 09876543210 -> 9876543210)
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+    
+    const fullNumber = `${countryCode}${cleanPhone}`;
 
     try {
       console.log(`[PhoneAuthScreen] Initiating phone verification for: ${fullNumber}`);
@@ -82,7 +99,8 @@ export const PhoneAuthScreen = () => {
         // Create a simulated recaptcha verifier for standard expo web/native fallback
         const mockVerifier = {
           type: 'recaptcha',
-          verify: async () => 'mock-token'
+          verify: async () => 'mock-token',
+          _reset: () => { console.log('[mockVerifier] Resetting simulated recaptcha verifier'); }
         };
         
         // Attempt phone verification trigger
@@ -180,14 +198,15 @@ export const PhoneAuthScreen = () => {
                 keyboardType="phone-pad"
                 value={phoneNumber}
                 onChangeText={(val) => {
-                  setPhoneNumber(val);
+                  const cleaned = val.replace(/\D/g, '');
+                  setPhoneNumber(cleaned);
                   if (error) setError(null);
                 }}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 textContentType="telephoneNumber"
                 autoComplete="tel"
-                maxLength={15}
+                maxLength={countryCode === '+91' ? 10 : 15}
               />
             </Animated.View>
 

@@ -209,51 +209,54 @@ export const OtpVerificationScreen = () => {
           </Text>
 
           {/* Hidden text input to receive keyboard events */}
-          <TextInput
-            ref={hiddenInputRef}
-            style={styles.hiddenInput}
-            keyboardType="number-pad"
-            maxLength={6}
-            value={otp.join('')}
-            onChangeText={handleInputChange}
-            textContentType="oneTimeCode"
-            autoComplete="sms-otp"
-          />
+          {/* Bulletproof wrapper to overlay hidden text input on top of visual grid */}
+          <View style={styles.otpInputWrapper}>
+            <TextInput
+              ref={hiddenInputRef}
+              style={styles.hiddenInput}
+              keyboardType="number-pad"
+              maxLength={6}
+              value={otp.join('')}
+              onChangeText={handleInputChange}
+              textContentType="oneTimeCode"
+              autoComplete="sms-otp"
+              caretHidden={true}
+            />
 
-          {/* Animated custom visual OTP grid */}
-          <Animated.View style={[styles.otpGrid, containerAnimatedStyle]}>
-            {otp.map((digit, index) => {
-              const cellAnimatedStyle = useAnimatedStyle(() => {
-                return {
-                  transform: [{ scale: cellScale[index].value }],
-                  borderColor: error 
-                    ? theme.colors.danger 
-                    : index === activeIndex 
-                      ? theme.colors.primary 
-                      : theme.colors.border,
-                };
-              });
+            {/* Animated custom visual OTP grid */}
+            <Animated.View style={[styles.otpGrid, containerAnimatedStyle]}>
+              {otp.map((digit, index) => {
+                const cellAnimatedStyle = useAnimatedStyle(() => {
+                  return {
+                    transform: [{ scale: cellScale[index].value }],
+                    borderColor: error 
+                      ? theme.colors.danger 
+                      : index === activeIndex 
+                        ? theme.colors.primary 
+                        : theme.colors.border,
+                  };
+                });
 
-              return (
-                <Animated.View 
-                  key={index} 
-                  style={[
-                    styles.otpCell, 
-                    { backgroundColor: theme.colors.surface }, 
-                    cellAnimatedStyle
-                  ]}
-                  onTouchEnd={() => hiddenInputRef.current?.focus()}
-                >
-                  <Text style={[styles.cellText, { color: theme.colors.text }]}>
-                    {digit}
-                  </Text>
-                  {index === activeIndex && !loading && (
-                    <View style={[styles.cursor, { backgroundColor: theme.colors.primary }]} />
-                  )}
-                </Animated.View>
-              );
-            })}
-          </Animated.View>
+                return (
+                  <Animated.View 
+                    key={index} 
+                    style={[
+                      styles.otpCell, 
+                      { backgroundColor: theme.colors.surface }, 
+                      cellAnimatedStyle
+                    ]}
+                  >
+                    <Text style={[styles.cellText, { color: theme.colors.text }]}>
+                      {digit}
+                    </Text>
+                    {index === activeIndex && !loading && (
+                      <View style={[styles.cursor, { backgroundColor: theme.colors.primary }]} />
+                    )}
+                  </Animated.View>
+                );
+              })}
+            </Animated.View>
+          </View>
 
           {error && (
             <View style={styles.errorContainer}>
@@ -339,16 +342,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     fontWeight: '600',
   },
+  otpInputWrapper: {
+    position: 'relative',
+    marginVertical: spacing.md,
+  },
   hiddenInput: {
-    position: 'absolute',
-    width: 1,
-    height: 1,
-    opacity: 0,
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.01,
+    zIndex: 10,
   },
   otpGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: spacing.md,
   },
   otpCell: {
     width: 48,

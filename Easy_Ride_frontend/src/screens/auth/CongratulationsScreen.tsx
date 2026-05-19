@@ -115,12 +115,11 @@ export const CongratulationsScreen = () => {
     iconOpacity.value = withTiming(1, { duration: 600 });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Countdown and routing switcher
+    // Countdown interval
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          handleFinishOnboarding();
           return 0;
         }
         return prev - 1;
@@ -129,6 +128,13 @@ export const CongratulationsScreen = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Safely execute navigation / Redux dispatch when countdown hits 0 (React-compliant side effect)
+  useEffect(() => {
+    if (countdown === 0) {
+      handleFinishOnboarding();
+    }
+  }, [countdown]);
 
   const iconAnimatedStyle = useAnimatedStyle(() => {
     return {
