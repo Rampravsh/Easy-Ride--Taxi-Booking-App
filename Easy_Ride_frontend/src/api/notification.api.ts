@@ -25,7 +25,7 @@ export const notificationApi = baseApi.injectEndpoints({
      * Fetch unread notification counts.
      * GET /notifications/unread-count
      */
-    getUnreadCount: builder.query<ApiResponse<UnreadNotificationCount>, void>({
+    getUnreadNotificationCount: builder.query<ApiResponse<UnreadNotificationCount>, void>({
       query: () => ({
         url: '/notifications/unread-count',
         method: 'GET',
@@ -60,7 +60,7 @@ export const notificationApi = baseApi.injectEndpoints({
 
         // Decrement badge count in unreadCount query
         const patchCount = dispatch(
-          notificationApi.util.updateQueryData('getUnreadCount', undefined, (draft) => {
+          notificationApi.util.updateQueryData('getUnreadNotificationCount', undefined, (draft) => {
             if (draft?.data && draft.data.count > 0) {
               draft.data.count -= 1;
             }
@@ -100,7 +100,7 @@ export const notificationApi = baseApi.injectEndpoints({
         );
 
         const patchCount = dispatch(
-          notificationApi.util.updateQueryData('getUnreadCount', undefined, (draft) => {
+          notificationApi.util.updateQueryData('getUnreadNotificationCount', undefined, (draft) => {
             if (draft?.data) {
               draft.data.count = 0;
             }
@@ -121,7 +121,7 @@ export const notificationApi = baseApi.injectEndpoints({
 
 export const {
   useGetNotificationsQuery,
-  useGetUnreadCountQuery,
+  useGetUnreadNotificationCountQuery,
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
 } = notificationApi;

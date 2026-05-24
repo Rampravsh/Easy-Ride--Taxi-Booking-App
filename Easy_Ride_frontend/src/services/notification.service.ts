@@ -46,7 +46,7 @@ export const NotificationService = {
   async syncUnreadCount(): Promise<number> {
     try {
       const result = await store.dispatch(
-        notificationApi.endpoints.getUnreadCount.initiate(undefined, { forceRefetch: true })
+        notificationApi.endpoints.getUnreadNotificationCount.initiate(undefined, { forceRefetch: true })
       ).unwrap();
 
       if (result.success && result.data) {
@@ -171,9 +171,9 @@ export const NotificationService = {
       })
     );
 
-    // 2. Increment getUnreadCount RTK cache count
+    // 2. Increment getUnreadNotificationCount RTK cache count
     store.dispatch(
-      notificationApi.util.updateQueryData('getUnreadCount', undefined, (draft) => {
+      notificationApi.util.updateQueryData('getUnreadNotificationCount', undefined, (draft) => {
         if (draft?.data) {
           draft.data.count = (draft.data.count || 0) + 1;
         } else {

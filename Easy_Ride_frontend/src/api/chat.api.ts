@@ -24,7 +24,7 @@ export const chatApi = baseApi.injectEndpoints({
      * Fetch the overall unread chat message count.
      * GET /chat/unread-count
      */
-    getUnreadCount: builder.query<ApiResponse<{ count: number }>, void>({
+    getUnreadChatCount: builder.query<ApiResponse<{ count: number }>, void>({
       query: () => ({
         url: '/chat/unread-count',
         method: 'GET',
@@ -129,7 +129,7 @@ export const chatApi = baseApi.injectEndpoints({
 
 export const {
   useGetMessagesQuery,
-  useGetUnreadCountQuery,
+  useGetUnreadChatCountQuery,
   useSendMessageMutation,
   useMarkAsReadMutation,
 } = chatApi;

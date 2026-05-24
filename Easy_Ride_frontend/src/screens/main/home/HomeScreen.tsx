@@ -7,7 +7,8 @@ import {
   Dimensions, 
   Image, 
   ActivityIndicator, 
-  Alert 
+  Alert,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -22,7 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../../navigation/types';
 import { useAppSelector } from '../../../redux/hooks';
 import { useGetUserProfileQuery } from '../../../api/user.api';
-import { useGetUnreadCountQuery } from '../../../api/notification.api';
+import { useGetUnreadNotificationCountQuery } from '../../../api/notification.api';
 import { RideService } from '../../../services/ride.service';
 
 export const HomeScreen = () => {
@@ -52,7 +53,7 @@ export const HomeScreen = () => {
   const { 
     data: unreadResponse, 
     refetch: refetchUnread 
-  } = useGetUnreadCountQuery(undefined, { skip: !isFocused, pollingInterval: 15000 });
+  } = useGetUnreadNotificationCountQuery(undefined, { skip: !isFocused });
   
   const unreadCount = unreadResponse?.data?.count || 0;
 
@@ -148,7 +149,6 @@ export const HomeScreen = () => {
       {/* Immersive Google Map */}
       <MapView
         ref={mapRef}
-        provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={{
           latitude: 37.78825,
